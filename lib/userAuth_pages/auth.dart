@@ -39,12 +39,16 @@ class Auth {
         String lastName = data['lastName'] ?? '';
         String email = data['email'] ?? '';
         String imageUrl = data['imageUrl'] ?? '';
+        String gender = data['gender'] ?? '';
+        String dob = data['dob'] ?? '';
 
         return {
           'firstName': firstName,
           'lastName': lastName,
           'email': email,
           'imageUrl': imageUrl,
+          'gender': gender,
+          'dob': dob,
         };
       } else {
         print('User data not found for UID: $uid');
@@ -87,6 +91,29 @@ class Auth {
       }
     } catch (e) {
       print("Error uploading image: $e");
+    }
+  }
+
+  Future<void> addGenderAndDob(
+      String uid, Map<String, String> addGenderAndDob) async {
+    try {
+      // Check if gender and dob are non-empty
+      if (addGenderAndDob['gender']?.isEmpty ?? true) {
+        print('Gender is empty');
+      }
+      if (addGenderAndDob['dob']?.isEmpty ?? true) {
+        print('DOB is empty');
+      }
+
+      // Debug print the map being passed to ensure data is correct
+      print('Data to be updated: $addGenderAndDob');
+
+      // Update the user document in Firestore
+      await _firestore.collection('users').doc(uid).update(addGenderAndDob);
+      print('Gender & Dob added successfully');
+    } catch (e) {
+      print('Error adding: $e');
+      throw e; // Optionally throw the error if you need to handle it elsewhere
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_fyp/userAuth_pages/auth.dart';
 import 'package:flutter_fyp/userAuth_pages/forgetpw.dart';
 import 'package:flutter_fyp/userAuth_pages/register.dart';
+import 'package:get/get.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -201,10 +202,9 @@ class _LoginPageState extends State<LoginPage> {
             cursor: SystemMouseCursors.click, // Changes cursor to click
             child: GestureDetector(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => RegisterPage()),
-                );
+                Route route =
+                    MaterialPageRoute(builder: (context) => RegisterPage());
+                Navigator.pushReplacement(context, route);
               },
               child: const Text(
                 'Register now',
@@ -321,5 +321,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
-
