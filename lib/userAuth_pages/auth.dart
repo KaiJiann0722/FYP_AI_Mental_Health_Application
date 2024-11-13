@@ -117,6 +117,36 @@ class Auth {
     }
   }
 
+  Future<void> updateUserGender(String gender) async {
+    try {
+      String uid = _firebaseAuth.currentUser!.uid;
+
+      // Update the gender field in Firestore for the current user
+      await _firestore.collection('users').doc(uid).update({
+        'gender': gender,
+      });
+
+      print('Gender updated successfully');
+    } catch (e) {
+      print('Error updating gender: $e');
+    }
+  }
+
+  Future<void> updateDob(String dob) async {
+    try {
+      String uid = _firebaseAuth.currentUser!.uid;
+
+      // Update the gender field in Firestore for the current user
+      await _firestore.collection('dob').doc(uid).update({
+        'dob': dob,
+      });
+
+      print('Dob updated successfully');
+    } catch (e) {
+      print('Error updating gender: $e');
+    }
+  }
+
   Future<String?> signInWithEmailAndPassword({
     required String email,
     required String password,

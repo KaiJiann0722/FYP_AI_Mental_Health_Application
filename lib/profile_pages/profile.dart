@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_fyp/profile_pages/utils.dart';
 import 'package:flutter_fyp/userAuth_pages/auth.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:intl/intl.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -21,11 +23,13 @@ class _ProfilePageState extends State<ProfilePage> {
   String email = '';
   String gender = '';
   String dob = '';
+  TextEditingController dateController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadUserData(); // Load the user data when the screen initializes
+    dateController.text = dob;
   }
 
   Future<void> _loadUserData() async {
@@ -50,7 +54,34 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _signOutButton() {
-    return ElevatedButton(onPressed: signOut, child: const Text('Sign Out'));
+    return SizedBox(
+      width: 300, // Same width as your other widgets
+      child: ElevatedButton(
+        onPressed: signOut,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red, // Button background color
+          padding: EdgeInsets.symmetric(
+              vertical: 12, horizontal: 16), // Padding for the button
+          shape: RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(8), // Rounded corners for the button
+            side: BorderSide(
+              color: Colors.black, // Border color
+              width: 1, // Border width
+              style: BorderStyle.solid, // Solid border style
+            ),
+          ),
+        ),
+        child: const Text(
+          'Sign Out',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black, // Text color
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _title() {
@@ -110,6 +141,220 @@ class _ProfilePageState extends State<ProfilePage> {
         child: child,
       );
 
+  Widget _emailDisplay() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Email',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Use IntrinsicWidth to let the container auto size based on content
+        IntrinsicWidth(
+          child: Container(
+            width: 300, // Set a fixed width for the container
+            decoration: BoxDecoration(
+              color: Colors.grey[200], // Background color
+              borderRadius: BorderRadius.circular(8), // Rounded corners
+              border: Border.all(color: Colors.grey), // Border color
+            ),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 12), // Padding for text
+            child: Row(
+              children: [
+                Icon(
+                  Icons.email, // Email icon
+                  color: Colors.grey, // Icon color
+                  size: 20, // Icon size
+                ),
+                const SizedBox(width: 8), // Space between icon and text
+                Expanded(
+                  child: Text(
+                    email, // Display the email value
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
+                    overflow: TextOverflow
+                        .ellipsis, // Truncate if the email is too long
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _genderDropdown() {
+    // Select the appropriate icon based on the gender value
+    IconData genderIcon = Icons.person; // Default icon
+    switch (gender) {
+      case 'Male':
+        genderIcon = Icons.male; // Male icon
+        break;
+      case 'Female':
+        genderIcon = Icons.female; // Female icon
+        break;
+      case 'Prefer Not to Say':
+        genderIcon = Icons.help_outline; // "Prefer Not to Say" icon
+        break;
+      default:
+        genderIcon = Icons.person; // Default icon
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Gender',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 8), // Space between label and dropdown
+        Container(
+          width: 300,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8), // Rounded corners
+            border: Border.all(color: Colors.grey), // Border color
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton2<String>(
+              isExpanded: true,
+              value: gender.isNotEmpty ? gender : null,
+              hint: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Icon(
+                    genderIcon, // Display the selected gender icon before the text
+                    color: Colors.grey, // Icon color
+                    size: 20, // Icon size
+                  ),
+                  const SizedBox(width: 8), // Space between icon and text
+                  const Text(
+                    'Select Gender',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ],
+              ),
+              items: <String>['Male', 'Female', 'Prefer Not to Say']
+                  .map((String value) => DropdownMenuItem<String>(
+                        value: value,
+                        child: Row(
+                          children: [
+                            Icon(
+                              value == 'Male'
+                                  ? Icons.male
+                                  : value == 'Female'
+                                      ? Icons.female
+                                      : Icons
+                                          .help_outline, // Gender-specific icons
+                              color: Colors.grey,
+                              size: 25,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              value,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              onChanged: (String? newValue) async {
+                setState(() {
+                  gender = newValue!;
+                });
+                // Optionally, update gender in Firebase or another service here
+                await Auth().updateUserGender(gender);
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _selectDOB(BuildContext context) async {
+    DateTime initialDate =
+        dob.isNotEmpty ? DateTime.parse(dob) : DateTime.now();
+    final DateTime? selectedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+
+    if (selectedDate != null && selectedDate != DateTime.now()) {
+      setState(() {
+        dob = DateFormat('yyyy-MM-dd').format(selectedDate);
+        dateController.text = dob; // Update DOB text field
+      });
+
+      // Call updateDob method to update DOB in Firestore
+      await Auth().updateDob(dob);
+    }
+  }
+
+  Widget _dobDisplay() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Date of Birth',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () => _selectDOB(context), // Show date picker on tap
+          child: Container(
+            width: 300,
+            decoration: BoxDecoration(
+              color: Colors.grey[200], // Background color
+              borderRadius: BorderRadius.circular(8), // Rounded corners
+              border: Border.all(color: Colors.grey), // Border color
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.edit_calendar_outlined, // Icon for DOB
+                  color: Colors.grey,
+                  size: 20,
+                ),
+                const SizedBox(width: 8), // Space between the icon and the text
+                Expanded(
+                  child: Text(
+                    dob.isEmpty ? 'Select DOB' : dob, // Show selected DOB
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
+                    overflow: TextOverflow
+                        .ellipsis, // Truncate if the text is too long
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,21 +398,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.email, color: Colors.grey), // Email icon
-                  const SizedBox(width: 10), // Space between the icon and text
-                  Text(
-                    email, // Display the user's email
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+              _emailDisplay(),
               const SizedBox(height: 10),
+              _genderDropdown(),
+              const SizedBox(height: 10),
+              _dobDisplay(),
               const SizedBox(height: 20),
-              const SizedBox(height: 30),
+              const SizedBox(height: 60),
               _signOutButton()
             ],
           ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_fyp/userAuth_pages/auth.dart';
 import 'package:flutter_fyp/userAuth_pages/forgetpw.dart';
 import 'package:flutter_fyp/userAuth_pages/register.dart';
-import 'package:get/get.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
