@@ -17,6 +17,7 @@ class _EmotionAnalysisPageState extends State<EmotionAnalysisPage> {
   final EmotionService _emotionService = EmotionService();
   final DatabaseService _databaseService = DatabaseService();
   List<Emotion> _emotions = [];
+  Sentiment? _sentiment;
   bool _isLoading = true;
   int _currentStep = 1; // Track the current step
   final steps = ['Journal', 'Emotion', 'Music']; // Define the steps
@@ -59,12 +60,11 @@ class _EmotionAnalysisPageState extends State<EmotionAnalysisPage> {
 
   Future<void> _analyzeEmotions() async {
     try {
-      final emotions =
-          await _emotionService.analyzeEmotions(widget.journalEntry);
+      final result = await _emotionService.analyzeEmotions(widget.journalEntry);
       setState(() {
-        _emotions = emotions;
+        _emotions = result['emotions'];
+        _sentiment = result['sentiment'];
         _isLoading = false;
-        _currentStep = 1; // Move to the next step
       });
 
       // Save emotions to Firestore
@@ -73,7 +73,7 @@ class _EmotionAnalysisPageState extends State<EmotionAnalysisPage> {
       setState(() {
         _isLoading = false;
       });
-      _showErrorDialog('Failed to analyze emotions. Please try again later.');
+      _showErrorDialog('Error: $e');
     }
   }
 
@@ -142,11 +142,29 @@ class _EmotionAnalysisPageState extends State<EmotionAnalysisPage> {
                         ),
                       )),
                   const SizedBox(height: 24),
+                  if (_sentiment != null) ...[
+                    const Text(
+                      'Sentiment Analysis:',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Sentiment: ${_sentiment!.label}',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    Text(
+                      'Compound Score: ${_sentiment!.compound}',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                   ElevatedButton(
                     onPressed: () {
-                      setState(() {
-                        _currentStep = 3; // Move to the final step
-                      });
+                      setState(() {});
                       // Navigate to the next page or perform any action
                     },
                     child: const Text('Next'),

@@ -12,7 +12,21 @@ class EmotionService {
     }
   }
 
-  Future<List<Emotion>> analyzeEmotions(String text) async {
+  String getSentimentLabel(double compound) {
+    if (compound >= 0.8) {
+      return 'Super Positive';
+    } else if (compound >= 0.2) {
+      return 'Positive';
+    } else if (compound > -0.2) {
+      return 'Neutral';
+    } else if (compound >= -0.8) {
+      return 'Negative';
+    } else {
+      return 'Super Negative';
+    }
+  }
+
+  Future<Map<String, dynamic>> analyzeEmotions(String text) async {
     try {
       final response = await http.post(
         Uri.parse(baseUrl),
@@ -29,7 +43,16 @@ class EmotionService {
             probability: entry.value.toDouble(),
           );
         }).toList();
-        return emotions;
+
+        final double compound = data['sentiment'];
+        final String sentimentLabel = getSentimentLabel(compound);
+        final Sentiment sentiment =
+            Sentiment(compound: compound, label: sentimentLabel);
+
+        return {
+          'emotions': emotions,
+          'sentiment': sentiment,
+        };
       } else {
         throw Exception('Failed to analyze emotions');
       }
