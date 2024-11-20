@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fyp/userAuth_pages/auth.dart';
 import 'package:flutter_fyp/userAuth_pages/login.dart';
+import 'package:flutter_fyp/userAuth_pages/userSetup.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -50,6 +51,12 @@ class _RegisterPageState extends State<RegisterPage> {
       // Registration successful
       // Navigate to the next screen or show success message
       print('Sucessfully store data in firestore');
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => UserSetupPage()),
+        );
+      }
     }
   }
 
@@ -267,7 +274,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     // Proceed with user registration
                     await registerUser();
                     if (context.mounted) {
-                      Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text("Registration successful!"),
@@ -317,10 +323,9 @@ class _RegisterPageState extends State<RegisterPage> {
             cursor: SystemMouseCursors.click, // Changes cursor to click
             child: GestureDetector(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginPage()),
-                );
+                Route route =
+                    MaterialPageRoute(builder: (context) => LoginPage());
+                Navigator.pushReplacement(context, route);
               },
               child: const Text(
                 'Login now',

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_fyp/profile_pages/utils.dart';
 import 'package:flutter_fyp/userAuth_pages/auth.dart';
@@ -20,6 +19,8 @@ class _ProfilePageState extends State<ProfilePage> {
   String lastName = '';
   String imageUrl = '';
   String email = '';
+  String gender = '';
+  String dob = '';
 
   @override
   void initState() {
@@ -36,6 +37,8 @@ class _ProfilePageState extends State<ProfilePage> {
         lastName = userData!['lastName'] ?? '';
         email = userData!['email'] ?? '';
         imageUrl = userData!['imageUrl'] ?? '';
+        gender = userData!['gender'] ?? '';
+        dob = userData!['dob'] ?? '';
       }
     });
   }
