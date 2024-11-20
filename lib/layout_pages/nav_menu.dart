@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fyp/profile_pages/profile.dart';
-import 'package:flutter_fyp/userAuth_pages/home_page.dart';
+import 'package:flutter_fyp/journal_pages/journal_main.dart';
 import 'package:get/get.dart';
 
 class NavMenu extends StatelessWidget {
@@ -40,7 +40,7 @@ class NavController extends GetxController {
   final Rx<int> selectedIndex = 0.obs;
 
   final screens = [
-    HomePage(),
+    JournalMainPage(),
     Container(color: Colors.purple),
     Container(color: Colors.black),
     ProfilePage()
