@@ -6,9 +6,9 @@ import '../models/emotion.dart';
 class EmotionService {
   static String get baseUrl {
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000/predict'; // Use 10.0.2.2 for Android Emulator
+      return 'http://10.0.2.2:8000/predict'; // Use host machine's IP address for Android Emulator
     } else {
-      return 'http://127.0.0.1:8000/predict'; // Use localhost for iOS Simulator
+      return 'http://192.168.100.164:8000/predict'; // Use host machine's IP address for iOS Simulator
     }
   }
 
@@ -57,6 +57,7 @@ class EmotionService {
         throw Exception('Failed to analyze emotions');
       }
     } catch (e) {
+      print('Error: $e');
       throw Exception('Error: $e');
     }
   }

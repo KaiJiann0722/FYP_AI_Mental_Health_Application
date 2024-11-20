@@ -2,6 +2,53 @@ import 'package:flutter/material.dart';
 
 typedef OnWidgetSizeChange = void Function(Size size);
 
+const Map<String, String> emotionToEmoji = {
+  "admiration": "😊",
+  "joy": "😃",
+  "anger": "😠",
+  "grief": "😔",
+  "confusion": "😕",
+  "amusement": "😄",
+  "approval": "👍",
+  "love": "❤️",
+  "annoyance": "😒",
+  "nervousness": "😓",
+  "curiosity": "🤔",
+  "caring": "😊",
+  "desire": "😍",
+  "excitement": "😆",
+  "gratitude": "🙏",
+  "optimism": "👍",
+  "pride": "😊",
+  "relief": "😄",
+  "disappointment": "😞",
+  "disapproval": "👎",
+  "disgust": "🤢",
+  "embarrassment": "😳",
+  "fear": "😟",
+  "remorse": "😔",
+  "sadness": "😔",
+  "surprise": "😮",
+  "realization": "💡",
+};
+
+Color getSentimentColor(String sentimentLabel) {
+  switch (sentimentLabel.toLowerCase()) {
+    case 'super positive':
+      return Colors.green[700]!;
+    case 'positive':
+      return Colors.green;
+    case 'neutral':
+      return Colors.grey;
+    case 'negative':
+      return Colors.red;
+    case 'super negative':
+      return Colors.red[700]!;
+    default:
+      return Colors.grey;
+  }
+}
+
 class MeasureSize extends StatefulWidget {
   final Widget child;
   final OnWidgetSizeChange onChange;

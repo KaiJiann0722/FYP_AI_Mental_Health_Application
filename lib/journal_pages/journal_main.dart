@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_fyp/userAuth_pages/auth.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'create_journal.dart';
 import 'utils.dart';
+import '../models/emotion.dart';
+import '../models/journal_model.dart' as journal;
+import 'journal_details.dart';
 
 class JournalMainPage extends StatefulWidget {
   const JournalMainPage({super.key});
@@ -14,38 +16,18 @@ class JournalMainPage extends StatefulWidget {
 }
 
 class _JournalMainPageState extends State<JournalMainPage> {
-  User? user;
+  User? get user => FirebaseAuth.instance.currentUser;
   bool _isSearchBarVisible = false;
-  final CollectionReference journalCollection =
-      FirebaseFirestore.instance.collection('journal');
   DateTime selectedDate = DateTime.now();
   String _sortOrder = 'Newest';
   final ValueNotifier<Map<String, Size>> _cardSizeNotifier =
       ValueNotifier<Map<String, Size>>({});
+  final journal.DatabaseService _journalDatabaseService =
+      journal.DatabaseService();
 
   @override
   void initState() {
     super.initState();
-    // Load the current user on initialization
-    _loadUser();
-  }
-
-  // Method to load the current user
-  Future<void> _loadUser() async {
-    final currentUser = Auth().currentUser;
-    setState(() {
-      user = currentUser;
-    });
-  }
-
-  // Get start of day
-  DateTime getStartOfDay(DateTime date) {
-    return DateTime(date.year, date.month, date.day);
-  }
-
-  // Get end of day
-  DateTime getEndOfDay(DateTime date) {
-    return DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
   }
 
   @override
@@ -86,49 +68,52 @@ class _JournalMainPageState extends State<JournalMainPage> {
                         },
                       ),
                       const SizedBox(width: 8),
-                      _isSearchBarVisible
-                          ? Container(
-                              width: 200,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(30),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.5),
-                                    spreadRadius: 1,
-                                    blurRadius: 5,
-                                  ),
-                                ],
-                              ),
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintText: 'Search',
-                                  hintStyle: TextStyle(color: Colors.grey[600]),
-                                  border: InputBorder.none,
-                                  prefixIcon: Icon(Icons.search,
+                      Visibility(
+                        visible: _isSearchBarVisible,
+                        child: Flexible(
+                          child: Container(
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 1,
+                                  blurRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: TextField(
+                              decoration: InputDecoration(
+                                hintText: 'Search',
+                                hintStyle: TextStyle(color: Colors.grey[600]),
+                                border: InputBorder.none,
+                                prefixIcon:
+                                    Icon(Icons.search, color: Colors.grey[600]),
+                                suffixIcon: IconButton(
+                                  icon: Icon(Icons.close,
                                       color: Colors.grey[600]),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(Icons.close,
-                                        color: Colors.grey[600]),
-                                    onPressed: () {
-                                      setState(() {
-                                        _isSearchBarVisible = false;
-                                      });
-                                    },
-                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isSearchBarVisible = false;
+                                    });
+                                  },
                                 ),
                               ),
-                            )
-                          : IconButton(
-                              icon:
-                                  Icon(Icons.search, color: Colors.brown[900]),
-                              onPressed: () {
-                                setState(() {
-                                  _isSearchBarVisible = true;
-                                });
-                              },
                             ),
+                          ),
+                        ),
+                      ),
+                      if (!_isSearchBarVisible)
+                        IconButton(
+                          icon: Icon(Icons.search, color: Colors.brown[900]),
+                          onPressed: () {
+                            setState(() {
+                              _isSearchBarVisible = true;
+                            });
+                          },
+                        ),
                     ],
                   ),
                 ],
@@ -208,7 +193,6 @@ class _JournalMainPageState extends State<JournalMainPage> {
                 ),
               ),
               const SizedBox(height: 20),
-
               // Timeline Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -252,140 +236,173 @@ class _JournalMainPageState extends State<JournalMainPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              // Journal Entries
+              const SizedBox(height: 10),
               Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: journalCollection
-                      .where('userId', isEqualTo: user?.uid)
-                      .where('entryDate',
-                          isGreaterThanOrEqualTo:
-                              Timestamp.fromDate(getStartOfDay(selectedDate)))
-                      .where('entryDate',
-                          isLessThan: Timestamp.fromDate(
-                              getStartOfDay(selectedDate)
-                                  .add(Duration(days: 1))))
-                      .orderBy('entryDate', descending: _sortOrder == 'Newest')
-                      .snapshots(),
+                child: StreamBuilder<QuerySnapshot<journal.Journal>>(
+                  stream: _journalDatabaseService.getJournalsByDateAndUser(
+                      selectedDate, user!.uid, _sortOrder),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(child: CircularProgressIndicator());
-                    }
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return Center(child: Text('No journal entries found.'));
-                    }
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else if (!snapshot.hasData ||
+                        snapshot.data!.docs.isEmpty) {
+                      return Center(child: Text('No journal entries found'));
+                    } else {
+                      return ListView(
+                        children: snapshot.data!.docs.map((doc) {
+                          String entryId = doc.id;
+                          String title = doc['title'];
+                          String content = doc['content'];
+                          DateTime entryDate =
+                              (doc['entryDate'] as Timestamp).toDate();
 
-                    return ListView(
-                      children: snapshot.data!.docs.map((doc) {
-                        String entryId = doc.id;
-                        String title = doc['title'];
-                        String content = doc['content'];
-                        DateTime entryDate =
-                            (doc['entryDate'] as Timestamp).toDate();
+                          // Retrieve emotions and sentiment directly from the journal document
+                          List<dynamic> emotionsJson = doc['emotions'];
 
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                          List<Emotion> emotions = emotionsJson
+                              .map((e) =>
+                                  Emotion.fromJson(e as Map<String, dynamic>))
+                              .toList();
+                          // Get the highest probability emotion
+                          Emotion? highestEmotion =
+                              emotions.isNotEmpty ? emotions.first : null;
+                          String emoji = highestEmotion != null
+                              ? emotionToEmoji[highestEmotion.emotion] ?? ''
+                              : '';
+                          String emotionName = highestEmotion != null
+                              ? highestEmotion.emotion
+                              : '';
+
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      JournalDetailsPage(journalId: entryId),
+                                ),
+                              );
+                            },
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  padding: EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    DateFormat('HH:mm').format(entryDate),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                ValueListenableBuilder<Map<String, Size>>(
-                                  valueListenable: _cardSizeNotifier,
-                                  builder: (context, sizeMap, child) {
-                                    Size size = sizeMap[entryId] ?? Size.zero;
-                                    return Container(
-                                      width: 2,
-                                      height: size.height + 18,
-                                      color: Colors.blue,
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                    bottom:
-                                        20.0), // Add padding between entries
-                                child: LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    return Container(
-                                      padding: EdgeInsets.all(16),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.grey.withOpacity(0.1),
-                                            spreadRadius: 1,
-                                            blurRadius: 5,
-                                          ),
-                                        ],
+                                        color: Colors.blue,
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: MeasureSize(
-                                        onChange: (size) {
-                                          _cardSizeNotifier.value = {
-                                            ..._cardSizeNotifier.value,
-                                            entryId: size,
-                                          };
-                                        },
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
+                                      child: Text(
+                                        DateFormat('HH:mm').format(entryDate),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                    ValueListenableBuilder<Map<String, Size>>(
+                                      valueListenable: _cardSizeNotifier,
+                                      builder: (context, sizeMap, child) {
+                                        Size size =
+                                            sizeMap[entryId] ?? Size.zero;
+                                        return Container(
+                                          width: 2,
+                                          height: size.height + 15.5,
+                                          color: Colors.blue,
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                        bottom:
+                                            20.0), // Add padding between entries
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        return Container(
+                                          padding: EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.grey
+                                                    .withOpacity(0.1),
+                                                spreadRadius: 1,
+                                                blurRadius: 5,
+                                              ),
+                                            ],
+                                          ),
+                                          child: MeasureSize(
+                                            onChange: (size) {
+                                              _cardSizeNotifier.value = {
+                                                ..._cardSizeNotifier.value,
+                                                entryId: size,
+                                              };
+                                            },
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
-                                                Icon(Icons.book,
-                                                    color: Colors.green),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Text(
-                                                    title,
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors.black,
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      emoji,
+                                                      style: TextStyle(
+                                                          fontSize: 20),
                                                     ),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Text(
+                                                        title,
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.black,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      emotionName,
+                                                      style: TextStyle(
+                                                          fontSize: 15,
+                                                          fontWeight:
+                                                              FontWeight.w600),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  content,
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              content,
-                                              style: TextStyle(
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        );
-                      }).toList(),
-                    );
+                          );
+                        }).toList(),
+                      );
+                    }
                   },
                 ),
               ),

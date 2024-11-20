@@ -8,8 +8,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import 'dart:io';
 import '../models/journal_model.dart';
-import 'emotion_analysis.dart';
 import 'utils.dart';
+import '../services/emotion_service.dart';
+import '../models/emotion.dart';
+import 'emotion_analysis.dart';
 
 class CreateJournal extends StatefulWidget {
   @override
@@ -22,12 +24,14 @@ class _CreateJournalState extends State<CreateJournal> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
 
+  final DatabaseService _databaseService = DatabaseService();
+  final EmotionService _emotionService = EmotionService();
+
   SpeechToText _speechToText = SpeechToText();
   bool _speechEnabled = false;
   String _lastWords = '';
   XFile? _image;
 
-  final DatabaseService _databaseService = DatabaseService();
   int _currentStep = 0; // Track the current step
   final steps = ['Journal', 'Emotion', 'Music']; // Define the steps
 
@@ -37,6 +41,16 @@ class _CreateJournalState extends State<CreateJournal> {
     _dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
     _timeController.text = DateFormat('HH:mm').format(DateTime.now());
     _initSpeech();
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _entryController.dispose();
+    _dateController.dispose();
+    _timeController.dispose();
+    _speechToText.stop();
+    super.dispose();
   }
 
   void _initSpeech() async {
@@ -102,33 +116,54 @@ class _CreateJournalState extends State<CreateJournal> {
       return;
     }
 
-    final journal = Journal(
+    Journal journal = Journal(
       title: _titleController.text,
       content: _entryController.text,
       entryDate: Timestamp.fromDate(dateTime), // Use Timestamp for entryDate
       imageUrl: base64Image, // Store the base64 string in the imageUrl field
       userId: userId,
+      emotions: null,
+      sentiment: null,
     );
 
-    final journalId = await _databaseService.addJournal(journal);
+    try {
+      // Analyze emotions and sentiment
+      final analysisResult =
+          await _emotionService.analyzeEmotions(_entryController.text);
+      final List<Emotion> emotions = analysisResult['emotions'];
+      final Sentiment sentiment = analysisResult['sentiment'];
 
-    _navigateToEmotionAnalysis(journalId);
-  }
+      // Update journal with emotions and sentiment
+      journal = Journal(
+        title: journal.title,
+        content: journal.content,
+        entryDate: journal.entryDate,
+        imageUrl: journal.imageUrl,
+        userId: journal.userId,
+        emotions: emotions,
+        sentiment: sentiment,
+      );
 
-  void _navigateToEmotionAnalysis(String journalId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EmotionAnalysisPage(
-          journalEntry: _entryController.text,
-          journalId: journalId,
-        ),
-      ),
-    ).then((_) {
-      setState(() {
-        _clearTextFields(); // Clear the text fields
-      });
-    });
+      // Save journal entry with emotions and sentiment
+      await _databaseService.addJournal(journal);
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EmotionAnalysis(
+              emotions: emotions,
+              sentiment: sentiment,
+            ),
+          ),
+        );
+        _clearTextFields();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to predict emotions and sentiment: $e')),
+      );
+    }
   }
 
   void _clearTextFields() {
