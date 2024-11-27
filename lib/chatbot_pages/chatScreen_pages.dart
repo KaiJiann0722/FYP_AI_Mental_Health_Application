@@ -34,21 +34,19 @@ class _ChatScreenState extends State<ChatScreen> {
           .map((conversation) => conversation['conversationId'] as String)
           .toList();
 
-      setState(() {
-        if (refresh) {
-          // If it's a refresh, reset the conversation list completely
-          conversationList.clear();
-        }
+      if (mounted) {
+        setState(() {
+          if (refresh) {
+            conversationList.clear();
+          }
+          conversationList.addAll(conversationIds);
 
-        conversationList
-            .addAll(conversationIds); // Add the fetched conversations
-
-        // Automatically select the first conversation or create a new one if none exist
-        if (conversationList.isNotEmpty && currentConversationId == null) {
-          currentConversationId = conversationList.first;
-          _loadConversation(currentConversationId!);
-        }
-      });
+          if (conversationList.isNotEmpty && currentConversationId == null) {
+            currentConversationId = conversationList.first;
+            _loadConversation(currentConversationId!);
+          }
+        });
+      }
     } catch (e) {
       print("Error fetching conversations: $e");
     }
@@ -80,20 +78,24 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     final messageText = _messageController.text.trim();
     if (messageText.isNotEmpty && currentConversationId != null) {
-      setState(() {
-        _messages.add({'sender': 'user', 'text': messageText});
-        isLoading = true;
-      });
+      if (mounted) {
+        setState(() {
+          _messages.add({'sender': 'user', 'text': messageText});
+          isLoading = true;
+        });
+      }
       _messageController.clear();
       _scrollToBottom();
 
       // Send the user's message to the chatbot API and get the response
       final botResponse = await ChatBotApi.sendMessage(messageText);
 
-      setState(() {
-        _messages.add({'sender': 'bot', 'text': botResponse});
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _messages.add({'sender': 'bot', 'text': botResponse});
+          isLoading = false;
+        });
+      }
 
       // Save the chat pair to the current conversation
       await _chatHistory.saveChatPair(
@@ -108,27 +110,30 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // Load the chat history for the selected conversation
   Future<void> _loadConversation(String conversationId) async {
-    setState(() {
-      _messages.clear();
-      isLoading = true;
-      currentConversationId =
-          conversationId; // Update the current conversation ID
-    });
+    if (mounted) {
+      setState(() {
+        _messages.clear();
+        isLoading = true;
+        currentConversationId = conversationId;
+      });
+    }
 
     try {
       final history = await _chatHistory.getChatHistory(conversationId);
-      setState(() {
-        if (history.isNotEmpty) {
-          _messages.addAll(history.map((entry) {
-            return {
-              'sender': entry['sender']?.toString() ?? '',
-              'text': entry['text']?.toString() ?? '',
-              'timestamp': entry['timestamp']?.toString() ?? '',
-            };
-          }).toList());
-        }
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          if (history.isNotEmpty) {
+            _messages.addAll(history.map((entry) {
+              return {
+                'sender': entry['sender']?.toString() ?? '',
+                'text': entry['text']?.toString() ?? '',
+                'timestamp': entry['timestamp']?.toString() ?? '',
+              };
+            }).toList());
+          }
+          isLoading = false;
+        });
+      }
     } catch (e) {
       print('Error loading conversation: $e');
       setState(() {
@@ -143,11 +148,13 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final newConversationId = await _chatHistory.createNewConversation();
       if (newConversationId != null) {
-        setState(() {
-          conversationList.add(newConversationId);
-          currentConversationId =
-              newConversationId; // Set new conversation as active
-        });
+        if (mounted) {
+          setState(() {
+            conversationList.add(newConversationId);
+            currentConversationId = newConversationId;
+          });
+        }
+
         _loadConversation(newConversationId); // Load the new conversation
       }
     } catch (e) {
