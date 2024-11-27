@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fyp/chatbot_pages/chatScreen_pages.dart';
 import 'package:flutter_fyp/profile_pages/profile.dart';
 import 'package:flutter_fyp/userAuth_pages/home_page.dart';
 import 'package:get/get.dart';
@@ -42,7 +43,7 @@ class NavController extends GetxController {
   final screens = [
     HomePage(),
     Container(color: Colors.purple),
-    Container(color: Colors.black),
-    ProfilePage()
+    ChatScreen(),
+    ProfilePage(),
   ];
 }

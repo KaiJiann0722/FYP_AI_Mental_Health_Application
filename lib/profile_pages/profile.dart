@@ -72,13 +72,24 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
         ),
-        child: const Text(
-          'Sign Out',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black, // Text color
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min, // Adjust the size based on content
+          mainAxisAlignment: MainAxisAlignment.center, // Center icon and text
+          children: [
+            Icon(
+              Icons.logout, // Logout icon
+              color: Colors.black, // Icon color
+            ),
+            SizedBox(width: 8), // Spacing between icon and text
+            Text(
+              'Sign Out',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black, // Text color
+              ),
+            ),
+          ],
         ),
       ),
     );
