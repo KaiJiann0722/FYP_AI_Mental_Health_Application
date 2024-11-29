@@ -88,6 +88,16 @@ class DatabaseService {
     return _journalRef.snapshots();
   }
 
+  Stream<List<QueryDocumentSnapshot<Journal>>> getJournalsByUserId(
+      String userId) {
+    return _journalRef
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs;
+    });
+  }
+
   Future<String> addJournal(Journal journal) async {
     DocumentReference<Journal> docRef = await _journalRef.add(journal);
     return docRef.id;
@@ -100,6 +110,12 @@ class DatabaseService {
       return docSnapshot.data();
     }
     return null;
+  }
+
+  Stream<List<Journal>> getSearchJournals() {
+    return _journalRef.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => doc.data()).toList();
+    });
   }
 
   Future<void> updateJournal(String journalId, Journal journal) async {
@@ -164,10 +180,34 @@ class DatabaseService {
     });
   }
 
-  Future<List<Map<String, dynamic>>> getAllEmotionsAndSentiments() async {
-    QuerySnapshot<Journal> querySnapshot = await _journalRef.get();
-    return querySnapshot.docs.map((doc) {
-      Map<String, dynamic> data = doc.data().toJson();
+  Future<Map<String, dynamic>> getAllEmotionsAndSentiments(
+      String userId) async {
+    DateTime now = DateTime.now();
+    DateTime yearAgo = now.subtract(Duration(days: 365));
+
+    QuerySnapshot<Journal> querySnapshot = await _journalRef
+        .where('userId', isEqualTo: userId)
+        .where('entryDate', isGreaterThanOrEqualTo: Timestamp.fromDate(yearAgo))
+        .orderBy('entryDate')
+        .get();
+
+    List<Emotion> allEmotions = [];
+    List<Sentiment> allSentiments = [];
+    List<DateTime> allDates = [];
+
+    // Counters for different time periods
+    Map<String, int> weekCounts = {};
+    Map<String, int> monthCounts = {};
+    Map<String, int> yearCounts = {};
+
+    DateTime weekAgo = now.subtract(Duration(days: 7));
+    DateTime monthAgo = now.subtract(Duration(days: 30));
+
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic>? data = doc.data().toJson();
+      Timestamp entryDate = data['entryDate'];
+      DateTime date = entryDate.toDate();
+
       List<dynamic> emotionsJson = data['emotions'];
       Map<String, dynamic> sentimentJson = data['sentiment'];
 
@@ -176,11 +216,35 @@ class DatabaseService {
           .toList();
       Sentiment sentiment = Sentiment.fromJson(sentimentJson);
 
-      return {
-        'emotions': emotions,
-        'sentiment': sentiment,
-      };
-    }).toList();
+      allEmotions.addAll(emotions);
+      allSentiments.add(sentiment);
+      allDates.add(date);
+
+      // Count emotions for different time periods
+      for (var emotion in emotions) {
+        yearCounts[emotion.emotion] = (yearCounts[emotion.emotion] ?? 0) + 1;
+
+        if (date.isAfter(monthAgo)) {
+          monthCounts[emotion.emotion] =
+              (monthCounts[emotion.emotion] ?? 0) + 1;
+        }
+
+        if (date.isAfter(weekAgo)) {
+          weekCounts[emotion.emotion] = (weekCounts[emotion.emotion] ?? 0) + 1;
+        }
+      }
+    }
+
+    return {
+      'emotions': allEmotions,
+      'sentiments': allSentiments,
+      'dates': allDates,
+      'counts': {
+        'week': weekCounts,
+        'month': monthCounts,
+        'year': yearCounts,
+      }
+    };
   }
 
   Future<Emotion?> getHighestProbabilityEmotion(String journalId) async {

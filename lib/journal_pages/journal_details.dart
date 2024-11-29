@@ -3,6 +3,7 @@ import '../models/journal_model.dart';
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart'; // Import fl_chart package
 import 'utils.dart';
+import 'edit_journal.dart';
 
 class JournalDetailsPage extends StatelessWidget {
   final String journalId;
@@ -14,7 +15,52 @@ class JournalDetailsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Journal Details'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: () {
+              // Navigate to the edit page
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditJournalPage(journalId: journalId),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: () async {
+              // Show a confirmation dialog before deleting
+              bool confirmDelete = await showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('Delete Journal'),
+                  content:
+                      Text('Are you sure you want to delete this journal?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text('Delete'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmDelete) {
+                // Delete the journal entry
+                await DatabaseService().deleteJournal(journalId);
+                Navigator.pop(context); // Go back to the previous page
+              }
+            },
+          ),
+        ],
       ),
+      backgroundColor: Colors.grey[100],
       body: FutureBuilder<Journal?>(
         future: DatabaseService().getJournalById(journalId),
         builder: (context, snapshot) {
