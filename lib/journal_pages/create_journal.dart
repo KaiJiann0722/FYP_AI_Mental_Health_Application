@@ -12,6 +12,8 @@ import 'utils.dart';
 import '../services/emotion_service.dart';
 import '../models/emotion.dart';
 import 'emotion_analysis.dart';
+import '../services/ocr_service.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class CreateJournal extends StatefulWidget {
   @override
@@ -32,6 +34,8 @@ class _CreateJournalState extends State<CreateJournal> {
   String _lastWords = '';
   XFile? _image;
 
+  final OCRService _ocrService = OCRService();
+
   int _currentStep = 0; // Track the current step
   final steps = ['Journal', 'Emotion', 'Music']; // Define the steps
 
@@ -47,9 +51,6 @@ class _CreateJournalState extends State<CreateJournal> {
   void dispose() {
     _titleController.dispose();
     _entryController.dispose();
-    _dateController.dispose();
-    _timeController.dispose();
-    _speechToText.stop();
     super.dispose();
   }
 
@@ -82,6 +83,146 @@ class _CreateJournalState extends State<CreateJournal> {
       setState(() {
         _image = selectedImage;
       });
+    }
+  }
+
+  Future<void> _processImageWithOCR(File imageFile) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Uploading image...'),
+              ],
+            ),
+          );
+        },
+      );
+
+      // Upload image to Firebase Storage
+      final String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      final Reference storageRef = FirebaseStorage.instance
+          .ref()
+          .child('ocr_images')
+          .child('$fileName.jpg');
+
+      await storageRef.putFile(imageFile);
+      final String imageUrl = await storageRef.getDownloadURL();
+
+      Navigator.pop(context); // Close upload dialog
+
+      // Show processing dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Processing image...'),
+              ],
+            ),
+          );
+        },
+      );
+
+      // Perform OCR using the image URL
+      final ocrText = await _ocrService.performOCR(imageUrl);
+      Navigator.pop(context); // Close processing dialog
+
+      // Show preview dialog
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('OCR Result'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Image preview with network image
+                  Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(child: CircularProgressIndicator());
+                      },
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      ocrText,
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text('Use Text'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (result == true) {
+        setState(() {
+          _entryController.text = ocrText;
+        });
+      }
+
+      // Clean up - delete uploaded image
+      await storageRef.delete();
+    } catch (e) {
+      Navigator.of(context).pop(); // Close any open dialogs
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error processing image: $e')),
+      );
+    }
+  }
+
+  Future<void> _pickAndProcessImage(ImageSource source) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: source);
+
+      if (image != null) {
+        await _processImageWithOCR(File(image.path));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error selecting image: $e')),
+      );
     }
   }
 
@@ -299,6 +440,18 @@ class _CreateJournalState extends State<CreateJournal> {
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
                         ),
+                        onTap: () async {
+                          DateTime? pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2101),
+                          );
+                          if (pickedDate != null) {
+                            _dateController.text =
+                                DateFormat('yyyy-MM-dd').format(pickedDate);
+                          }
+                        },
                         readOnly: true,
                       ),
                     ),
@@ -315,6 +468,15 @@ class _CreateJournalState extends State<CreateJournal> {
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
                         ),
+                        onTap: () async {
+                          TimeOfDay? pickedTime = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.now(),
+                          );
+                          if (pickedTime != null) {
+                            _timeController.text = pickedTime.format(context);
+                          }
+                        },
                         readOnly: true,
                       ),
                     ),
@@ -368,21 +530,24 @@ class _CreateJournalState extends State<CreateJournal> {
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.photo_camera_outlined,
-                                color: Colors.grey),
-                            onPressed: () {},
-                          ),
-                          IconButton(
                             icon: const Icon(Icons.mic_none_rounded,
                                 color: Colors.grey),
                             onPressed: _speechToText.isNotListening
                                 ? _startListening
                                 : _stopListening,
                           ),
+                          // Update IconButtons
                           IconButton(
                             icon: const Icon(Icons.file_upload_outlined,
                                 color: Colors.grey),
-                            onPressed: () {},
+                            onPressed: () =>
+                                _pickAndProcessImage(ImageSource.gallery),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.photo_camera_outlined,
+                                color: Colors.grey),
+                            onPressed: () =>
+                                _pickAndProcessImage(ImageSource.camera),
                           ),
                         ],
                       ),

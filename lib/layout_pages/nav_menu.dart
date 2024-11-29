@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_fyp/profile_pages/profile.dart';
 import 'package:flutter_fyp/journal_pages/journal_main.dart';
 import 'package:get/get.dart';
+import 'package:flutter_fyp/emotion_page/emotion.dart'; // Import the new chart page
 
 class NavMenu extends StatelessWidget {
   const NavMenu({super.key});
@@ -22,6 +23,7 @@ class NavMenu extends StatelessWidget {
             // First destination with an icon
             NavigationDestination(
                 icon: Icon(Icons.home_rounded), label: 'Home'),
+            NavigationDestination(icon: Icon(Icons.show_chart), label: 'Chart'),
             NavigationDestination(
                 icon: Icon(Icons.music_note_rounded), label: 'Music'),
             NavigationDestination(
@@ -41,6 +43,7 @@ class NavController extends GetxController {
 
   final screens = [
     JournalMainPage(),
+    EmotionChartPage(),
     Container(color: Colors.purple),
     Container(color: Colors.black),
     ProfilePage()

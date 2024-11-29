@@ -10,70 +10,155 @@ class EmotionAnalysis extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    int _currentStep = 1; // Track the current step
+    int currentStep = 1; // Track the current step
     final steps = ['Journal', 'Emotion', 'Music']; // Define the steps
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Emotion Analysis'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ProgressStepper(currentStep: _currentStep, steps: steps),
-            const Text(
-              'Emotion Analysis:',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ...emotions.map((emotion) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ProgressStepper(currentStep: currentStep, steps: steps),
+              const SizedBox(height: 24),
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${emotion.emotion} ${emotionToEmoji[emotion.emotion] ?? ''}',
-                        style: const TextStyle(fontSize: 16),
+                        'Emotion Analysis',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                      const SizedBox(height: 16),
+                      ...emotions
+                          .map((emotion) => Container(
+                                margin: EdgeInsets.only(bottom: 8),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              emotionToEmoji[emotion.emotion
+                                                      .toLowerCase()] ??
+                                                  '🤔',
+                                              style: TextStyle(fontSize: 24),
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              emotion.emotion,
+                                              style: TextStyle(fontSize: 16),
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          '${(emotion.probability * 100).toStringAsFixed(1)}%',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 4),
+                                    LinearProgressIndicator(
+                                      value: emotion.probability,
+                                      backgroundColor: Colors.grey[200],
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.blue.withOpacity(0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ))
+                          .toList(),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        '${(emotion.probability * 100).toStringAsFixed(2)}%',
-                        style: const TextStyle(fontSize: 16),
+                        'Sentiment Analysis',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Overall Sentiment:',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          Text(
+                            sentiment.label,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: getSentimentColor(sentiment.label),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(
+                        value: (sentiment.compound + 1) / 2, // normalize to 0-1
+                        backgroundColor: Colors.grey[200],
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          getSentimentColor(sentiment.label),
+                        ),
                       ),
                     ],
                   ),
-                )),
-            const SizedBox(height: 24),
-            const Text(
-              'Sentiment Analysis:',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Sentiment: ${sentiment.label}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            Text(
-              'Compound Score: ${sentiment.compound}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                // Navigate to the next page or perform any action
-              },
-              child: const Text('Next'),
-            ),
-          ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    debugPrint('Get Music Recommendations button pressed');
+                    // Navigate to music recommendation page
+                    Navigator.pushReplacementNamed(
+                        context, '/music_recommendations');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Get Music Recommendations',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

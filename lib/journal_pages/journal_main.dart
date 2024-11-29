@@ -7,6 +7,7 @@ import 'utils.dart';
 import '../models/emotion.dart';
 import '../models/journal_model.dart' as journal;
 import 'journal_details.dart';
+import 'search_journal.dart';
 
 class JournalMainPage extends StatefulWidget {
   const JournalMainPage({super.key});
@@ -17,7 +18,6 @@ class JournalMainPage extends StatefulWidget {
 
 class _JournalMainPageState extends State<JournalMainPage> {
   User? get user => FirebaseAuth.instance.currentUser;
-  bool _isSearchBarVisible = false;
   DateTime selectedDate = DateTime.now();
   String _sortOrder = 'Newest';
   final ValueNotifier<Map<String, Size>> _cardSizeNotifier =
@@ -60,60 +60,17 @@ class _JournalMainPageState extends State<JournalMainPage> {
                   ),
                   Row(
                     children: [
+                      const SizedBox(width: 8),
                       IconButton(
-                        icon: Icon(Icons.calendar_today,
-                            color: Colors.brown[900]),
+                        icon: Icon(Icons.search, color: Colors.brown[900]),
                         onPressed: () {
-                          // Handle calendar icon press
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SearchPage()),
+                          );
                         },
                       ),
-                      const SizedBox(width: 8),
-                      Visibility(
-                        visible: _isSearchBarVisible,
-                        child: Flexible(
-                          child: Container(
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.5),
-                                  spreadRadius: 1,
-                                  blurRadius: 5,
-                                ),
-                              ],
-                            ),
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: 'Search',
-                                hintStyle: TextStyle(color: Colors.grey[600]),
-                                border: InputBorder.none,
-                                prefixIcon:
-                                    Icon(Icons.search, color: Colors.grey[600]),
-                                suffixIcon: IconButton(
-                                  icon: Icon(Icons.close,
-                                      color: Colors.grey[600]),
-                                  onPressed: () {
-                                    setState(() {
-                                      _isSearchBarVisible = false;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (!_isSearchBarVisible)
-                        IconButton(
-                          icon: Icon(Icons.search, color: Colors.brown[900]),
-                          onPressed: () {
-                            setState(() {
-                              _isSearchBarVisible = true;
-                            });
-                          },
-                        ),
                     ],
                   ),
                 ],
