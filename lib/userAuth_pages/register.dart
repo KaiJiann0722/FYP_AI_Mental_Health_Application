@@ -43,9 +43,11 @@ class _RegisterPageState extends State<RegisterPage> {
       lastName: _lnameController.text,
     );
 
-    setState(() {
-      errorMsg = errorMessage; // Display error message if there's an error
-    });
+    if (mounted) {
+      setState(() {
+        errorMsg = errorMessage; // Display error message if there's an error
+      });
+    }
 
     if (errorMessage == null) {
       // Registration successful
@@ -67,10 +69,12 @@ class _RegisterPageState extends State<RegisterPage> {
     );
 
     // Update the error message in the state if there's an error
-    setState(() {
-      errorMsg = customErrorMessage ??
-          ''; // Display error if exists, else empty string
-    });
+    if (mounted) {
+      setState(() {
+        errorMsg = customErrorMessage ??
+            ''; // Display error if exists, else empty string
+      });
+    }
   }
 
   Widget _title() {

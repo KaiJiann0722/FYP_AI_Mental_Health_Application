@@ -34,6 +34,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadUserData() async {
     Map<String, String>? data = await Auth().getUserData();
+    if(mounted){
     setState(() {
       userData = data;
       if (userData != null) {
@@ -45,6 +46,7 @@ class _ProfilePageState extends State<ProfilePage> {
         dob = userData!['dob'] ?? '';
       }
     });
+    }
   }
 
   Future<void> signOut() async {

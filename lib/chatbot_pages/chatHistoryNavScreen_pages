@@ -1,0 +1,113 @@
+import 'package:flutter/material.dart';
+
+class ConversationDrawer extends StatefulWidget {
+  final Map<String, String> conversationMap; // Map of conversationId to titles
+  final String? currentConversationId;
+  final Function(String) onSelectConversation;
+  final Future<void> Function() onStartNewConversation;
+
+  const ConversationDrawer({
+    Key? key,
+    required this.conversationMap,
+    required this.currentConversationId,
+    required this.onSelectConversation,
+    required this.onStartNewConversation,
+  }) : super(key: key);
+
+  @override
+  _ConversationDrawerState createState() => _ConversationDrawerState();
+}
+
+class _ConversationDrawerState extends State<ConversationDrawer> {
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    // Filter the conversation list based on the search query
+    final filteredConversations = widget.conversationMap.entries
+        .where((entry) => entry.value.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.7, // Adjust drawer width
+      child: Drawer(
+        child: Column(
+          children: [
+            // DrawerHeader
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft, // Align text to the left
+                child: Text(
+                  'Chats',
+                  style: TextStyle(color: Colors.white, fontSize: 24),
+                ),
+
+                
+              ),
+            ),
+            // Search Bar under the DrawerHeader inside the blue box
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search conversations...',
+                  hintStyle: const TextStyle(color: Colors.white70),
+                  prefixIcon: const Icon(Icons.search, color: Colors.white),
+                  filled: true,
+                  fillColor: Colors.blue[700],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+            // List of conversations
+            Expanded(
+              child: ListView.builder(
+                itemCount: filteredConversations.length,
+                itemBuilder: (context, index) {
+                  final conversationId = filteredConversations[index].key;
+                  final title = filteredConversations[index].value ?? "Conversation ${index + 1}";
+
+                  return ListTile(
+                    title: Text(title),
+                    onTap: widget.currentConversationId == conversationId
+                        ? null // Disable the current conversation
+                        : () {
+                            Navigator.pop(context); // Close the drawer
+                            widget.onSelectConversation(conversationId);
+                          },
+                    tileColor: widget.currentConversationId == conversationId
+                        ? Colors.grey[300] // Highlight the active conversation
+                        : null,
+                  );
+                },
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('Start New Conversation'),
+              onTap: () async {
+                await widget.onStartNewConversation();
+                Navigator.pop(context); // Close the drawer
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

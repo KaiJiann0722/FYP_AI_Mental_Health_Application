@@ -32,10 +32,12 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     // Update the error message in the state if there's an error
-    setState(() {
-      errorMsg = customErrorMessage ??
-          ''; // Display error if exists, else empty string
-    });
+    if (mounted) {
+      setState(() {
+        errorMsg = customErrorMessage ??
+            ''; // Display error if exists, else empty string
+      });
+    }
   }
 
   Widget _title() {
