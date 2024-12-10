@@ -28,20 +28,25 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchConversations();
+    fetchConversations();
   }
 
   // Fetch the conversations and auto load the first one or create a new conversation
-  Future<void> _fetchConversations({bool refresh = false}) async {
+  Future<void> fetchConversations({bool refresh = false}) async {
     try {
       setState(() {
         _isLoadingConversations = true;
       });
 
+      if (refresh) {
+        conversationMap.clear();
+        conversationList.clear();
+        conversationTitles.clear();
+      }
+
       // Fetch the list of conversation IDs
       final conversations = await _chatHistory.getConversationIds();
-      print(
-          'Conversations fetched: $conversations'); // Print the fetched conversations
+      print('Conversations fetched: $conversations');
 
       if (conversations.isEmpty) {
         // If no conversations exist, create a new one
@@ -66,25 +71,31 @@ class _ChatScreenState extends State<ChatScreen> {
         // Add the conversation ID and its title to the map
         conversationMap[conversationId] = title;
 
-        print(
-            'Conversation $i: ID = $conversationId, Title = $title'); // Print each conversation's ID and title
+        print('Conversation $i: ID = $conversationId, Title = $title');
       }
 
       if (mounted) {
         setState(() {
-          if (refresh) {
-            conversationList.clear();
-            conversationTitles.clear();
-          }
-
           // Store the conversation IDs and titles in the map
           conversationList = conversationMap.keys.toList();
           conversationTitles = conversationMap.values.toList();
 
-          // Load the first conversation when first opening the page
-          if (conversationList.isNotEmpty && currentConversationId == null) {
-            currentConversationId = conversationList.first;
-            _loadConversation(currentConversationId!);
+          // Select the next conversation if there are any
+          if (conversationList.isNotEmpty) {
+            if (currentConversationId == null) {
+              currentConversationId = conversationList
+                  .first; // Load the first conversation if it's the first time
+              _loadConversation(currentConversationId!);
+            } else {
+              // If a conversation is deleted, select the next one
+              if (!conversationList.contains(currentConversationId)) {
+                currentConversationId =
+                    conversationList.isNotEmpty ? conversationList.first : null;
+                if (currentConversationId != null) {
+                  _loadConversation(currentConversationId!);
+                }
+              }
+            }
           }
 
           _isLoadingConversations = false;
@@ -171,7 +182,7 @@ class _ChatScreenState extends State<ChatScreen> {
         currentConversationHistory = updatedConversationHistory;
 
         _scrollToBottom();
-        _fetchConversations(refresh: true);
+        //fetchConversations(refresh: true);
       } catch (e) {
         print('Error during sending message: $e');
         setState(() {
@@ -218,8 +229,6 @@ class _ChatScreenState extends State<ChatScreen> {
       final history = await _chatHistory.getChatHistory(conversationId);
 
       print("Chat history for conversation ID $conversationId: $history");
-
-      //await _chatHistory.saveChatTitle(conversationId, 'Work Discussion');
 
       if (mounted) {
         setState(() {
@@ -297,6 +306,7 @@ class _ChatScreenState extends State<ChatScreen> {
         conversationMap: conversationMap,
         currentConversationId: currentConversationId,
         onSelectConversation: (selectedConversation) {
+          print('Selected conversation ID: $selectedConversation');
           _loadConversation(
               selectedConversation); // Call the method to load conversation
           setState(() {}); // Trigger state update
@@ -305,6 +315,7 @@ class _ChatScreenState extends State<ChatScreen> {
           await _startNewConversation();
           setState(() {}); // Trigger state update
         },
+        fetchConversations: fetchConversations,
       ),
       body: Column(
         children: [

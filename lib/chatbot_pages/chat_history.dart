@@ -145,6 +145,61 @@ class ChatHistory {
     }
   }
 
+// Delete Conversation
+  Future<String?> deleteConversation(String conversationId) async {
+    try {
+      // Get the current user
+      User? user = _auth.currentUser;
+      if (user == null) {
+        print('No user is logged in');
+        return null;
+      }
+
+      String uid = user.uid;
+
+      // Create a reference to the user's document in the 'users' collection
+      DocumentReference userDoc = _firestore.collection('users').doc(uid);
+
+      // Create a reference to the specific conversation in the 'chatHistory' sub-collection
+      DocumentReference chatHistoryDoc =
+          userDoc.collection('chatHistory').doc(conversationId);
+
+      // Check if the conversation document exists
+      DocumentSnapshot conversationSnapshot = await chatHistoryDoc.get();
+      if (!conversationSnapshot.exists) {
+        print('Conversation with ID $conversationId does not exist.');
+        return null;
+      }
+
+      // Delete the conversation document
+      await chatHistoryDoc.delete();
+      print('Conversation $conversationId deleted successfully');
+
+      // Fetch the remaining conversation IDs
+      List<Map<String, dynamic>> conversations = await getConversationIds();
+
+      if (conversations.isNotEmpty) {
+        // If there are other conversations, select the first one
+        String nextConversationId = conversations.first['conversationId'];
+        print('Next conversation selected: $nextConversationId');
+        return nextConversationId;
+      } else {
+        // If no conversations remain, create a new conversation
+        String? newConversationId = await createNewConversation();
+        if (newConversationId != null) {
+          print('Created new conversation with ID: $newConversationId');
+          return newConversationId;
+        } else {
+          print('Failed to create a new conversation.');
+          return null;
+        }
+      }
+    } catch (e) {
+      print('Error deleting conversation: $e');
+      return null;
+    }
+  }
+
   // Get list of conversation IDS from a user
   Future<List<Map<String, dynamic>>> getConversationIds() async {
     try {
