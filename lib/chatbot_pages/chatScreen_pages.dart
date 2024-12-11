@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fyp/chatbot_pages/chatHistoryNavScreen_pages';
 import 'package:flutter_fyp/chatbot_pages/chat_history.dart';
 import 'chatbot_api.dart';
 import 'chat_typingIndicator.dart';
@@ -14,37 +15,90 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _messageController = TextEditingController();
   final List<Map<String, String>> _messages = [];
+  bool _isLoadingConversations = true;
   bool isLoading = false;
   final ChatHistory _chatHistory = ChatHistory();
   List<String> conversationList = [];
+  List<String> conversationTitles = [];
+  // Initialize a map to store conversation ids and titles
+  Map<String, String> conversationMap = {};
   String? currentConversationId; // Track the current active conversation
+  String currentConversationHistory = '';
 
   @override
   void initState() {
     super.initState();
-    _fetchConversations();
+    fetchConversations();
   }
 
   // Fetch the conversations and auto load the first one or create a new conversation
-  Future<void> _fetchConversations({bool refresh = false}) async {
+  Future<void> fetchConversations({bool refresh = false}) async {
     try {
-      final conversations = await _chatHistory.getConversationIds();
+      setState(() {
+        _isLoadingConversations = true;
+      });
 
-      final conversationIds = conversations
-          .map((conversation) => conversation['conversationId'] as String)
-          .toList();
+      if (refresh) {
+        conversationMap.clear();
+        conversationList.clear();
+        conversationTitles.clear();
+      }
+
+      // Fetch the list of conversation IDs
+      final conversations = await _chatHistory.getConversationIds();
+      print('Conversations fetched: $conversations');
+
+      if (conversations.isEmpty) {
+        // If no conversations exist, create a new one
+        await _startNewConversation();
+      }
+
+      // Loop through each conversationId and fetch its title
+      for (int i = 0; i < conversations.length; i++) {
+        final conversationId = conversations[i]['conversationId'];
+
+        // Fetch the title for the conversation
+        String? title = await _chatHistory.getChatTitle(conversationId);
+
+        // If no title is found, use the default "Conversation X"
+        if (title == null || title.isEmpty) {
+          title = "Conversation ${i + 1}";
+
+          // Save the default title to Firestore using your saveChatTitle method
+          await _chatHistory.saveChatTitle(conversationId, title);
+        }
+
+        // Add the conversation ID and its title to the map
+        conversationMap[conversationId] = title;
+
+        print('Conversation $i: ID = $conversationId, Title = $title');
+      }
 
       if (mounted) {
         setState(() {
-          if (refresh) {
-            conversationList.clear();
-          }
-          conversationList.addAll(conversationIds);
+          // Store the conversation IDs and titles in the map
+          conversationList = conversationMap.keys.toList();
+          conversationTitles = conversationMap.values.toList();
 
-          if (conversationList.isNotEmpty && currentConversationId == null) {
-            currentConversationId = conversationList.first;
-            _loadConversation(currentConversationId!);
+          // Select the next conversation if there are any
+          if (conversationList.isNotEmpty) {
+            if (currentConversationId == null) {
+              currentConversationId = conversationList
+                  .first; // Load the first conversation if it's the first time
+              _loadConversation(currentConversationId!);
+            } else {
+              // If a conversation is deleted, select the next one
+              if (!conversationList.contains(currentConversationId)) {
+                currentConversationId =
+                    conversationList.isNotEmpty ? conversationList.first : null;
+                if (currentConversationId != null) {
+                  _loadConversation(currentConversationId!);
+                }
+              }
+            }
           }
+
+          _isLoadingConversations = false;
         });
       }
     } catch (e) {
@@ -77,6 +131,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // Send the message and get the bot's response
   Future<void> _sendMessage() async {
     final messageText = _messageController.text.trim();
+
     if (messageText.isNotEmpty && currentConversationId != null) {
       if (mounted) {
         setState(() {
@@ -84,32 +139,84 @@ class _ChatScreenState extends State<ChatScreen> {
           isLoading = true;
         });
       }
+
+      // Clear the message input field and scroll to the bottom
       _messageController.clear();
       _scrollToBottom();
 
-      // Send the user's message to the chatbot API and get the response
-      final botResponse = await ChatBotApi.sendMessage(messageText);
+      try {
+        // Retrieve the conversation history from Firestore
+        List<Map<String, dynamic>> conversationHistory =
+            await _chatHistory.getChatHistory(currentConversationId!);
 
-      if (mounted) {
+        // Check if conversationHistory is empty or not before formatting
+        String formattedHistory =
+            formatConversationHistory(conversationHistory);
+
+        print("Sending conversation history: $formattedHistory");
+
+        // Send the user's message to the chatbot API and get the response
+        final botResponse = await ChatBotApi.sendMessage(messageText,
+            conversationHistory: formattedHistory);
+
+        // Extract the bot response from model's response
+        String response =
+            botResponse['response'] ?? 'Error: No response from chatbot';
+        String updatedConversationHistory =
+            botResponse['conversation_history'] ?? formattedHistory;
+
+        print("Bot Response: $response");
+
+        if (mounted) {
+          setState(() {
+            _messages.add({'sender': 'bot', 'text': response});
+            isLoading = false;
+          });
+        }
+
+        // Save the chat pair to the current conversation
+        await _chatHistory.saveChatPair(
+            currentConversationId!, messageText, response);
+
+        // Update the conversation history with the new conversation
+        currentConversationHistory = updatedConversationHistory;
+
+        _scrollToBottom();
+        //fetchConversations(refresh: true);
+      } catch (e) {
+        print('Error during sending message: $e');
         setState(() {
-          _messages.add({'sender': 'bot', 'text': botResponse});
           isLoading = false;
         });
       }
-
-      // Save the chat pair to the current conversation
-      await _chatHistory.saveChatPair(
-          currentConversationId!, messageText, botResponse);
-
-      _scrollToBottom();
-      _fetchConversations(refresh: true);
     } else if (currentConversationId == null) {
       print('No active conversation selected.');
     }
   }
 
+//Format conversation history format to feed to model
+  String formatConversationHistory(
+      List<Map<String, dynamic>> conversationHistory) {
+    if (conversationHistory.isEmpty) return '';
+
+    StringBuffer formattedHistory = StringBuffer();
+
+    // Iterate through messages and format them
+    for (var entry in conversationHistory) {
+      if (entry['sender'] == 'user') {
+        formattedHistory.write('User: ${entry['text']}\n');
+      } else if (entry['sender'] == 'bot') {
+        formattedHistory.write('Chatbot: ${entry['text']}\n');
+      }
+    }
+
+    return formattedHistory.toString();
+  }
+
   // Load the chat history for the selected conversation
   Future<void> _loadConversation(String conversationId) async {
+    ChatBotApi.resetBackendHistory();
+
     if (mounted) {
       setState(() {
         _messages.clear();
@@ -120,6 +227,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final history = await _chatHistory.getChatHistory(conversationId);
+
+      print("Chat history for conversation ID $conversationId: $history");
+
       if (mounted) {
         setState(() {
           if (history.isNotEmpty) {
@@ -148,14 +258,21 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final newConversationId = await _chatHistory.createNewConversation();
       if (newConversationId != null) {
-        if (mounted) {
-          setState(() {
-            conversationList.add(newConversationId);
-            currentConversationId = newConversationId;
-          });
-        }
+        // Add the new conversation ID and title to the conversationMap
+        setState(() {
+          // Add new conversation ID and default title to the conversationMap
+          final newTitle =
+              "Conversation ${conversationMap.length + 1}"; // Incremental title based on existing conversation count
+          conversationMap[newConversationId] = newTitle;
 
-        _loadConversation(newConversationId); // Load the new conversation
+          // Add the new conversation ID to the conversationList
+          conversationList.add(newConversationId);
+          currentConversationId =
+              newConversationId; // Set the new conversation as the current one
+        });
+
+        // Load the new conversation after adding it
+        _loadConversation(newConversationId);
       }
     } catch (e) {
       print('Error starting a new conversation: $e');
@@ -164,54 +281,41 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingConversations) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("ChatBot"),
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text("Loading Conversations..."),
+            ],
+          ),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text("ChatBot"),
       ),
-      drawer: StatefulBuilder(
-        builder: (context, setState) {
-          return Drawer(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                const DrawerHeader(
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                  ),
-                  child: Text(
-                    'Conversations',
-                    style: TextStyle(color: Colors.white, fontSize: 24),
-                  ),
-                ),
-                // Loop through conversations and make the selected one unclickable
-                for (var i = 0; i < conversationList.length; i++)
-                  ListTile(
-                    title: Text('Conversation ${i + 1}'),
-                    onTap: currentConversationId == conversationList[i]
-                        ? null // Disable the current conversation
-                        : () {
-                            Navigator.pop(context); // Close the drawer
-                            _loadConversation(conversationList[
-                                i]); // Load selected conversation
-                          },
-                    tileColor: currentConversationId == conversationList[i]
-                        ? Colors.grey[300] // Highlight the active conversation
-                        : null,
-                  ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.add),
-                  title: const Text('Start New Conversation'),
-                  onTap: () async {
-                    await _startNewConversation();
-                    setState(() {}); // Trigger the drawer update
-                    Navigator.pop(context); // Close the drawer
-                  },
-                ),
-              ],
-            ),
-          );
+      drawer: ConversationDrawer(
+        conversationMap: conversationMap,
+        currentConversationId: currentConversationId,
+        onSelectConversation: (selectedConversation) {
+          print('Selected conversation ID: $selectedConversation');
+          _loadConversation(
+              selectedConversation); // Call the method to load conversation
+          setState(() {}); // Trigger state update
         },
+        onStartNewConversation: () async {
+          await _startNewConversation();
+          setState(() {}); // Trigger state update
+        },
+        fetchConversations: fetchConversations,
       ),
       body: Column(
         children: [

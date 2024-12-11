@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_fyp/admin_pages/adminScreen.dart';
 import 'package:flutter_fyp/profile_pages/utils.dart';
 import 'package:flutter_fyp/userAuth_pages/auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,6 +24,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String email = '';
   String gender = '';
   String dob = '';
+  String isAdmin = '';
   TextEditingController dateController = TextEditingController();
 
   @override
@@ -34,17 +36,20 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadUserData() async {
     Map<String, String>? data = await Auth().getUserData();
-    setState(() {
-      userData = data;
-      if (userData != null) {
-        firstName = userData!['firstName'] ?? '';
-        lastName = userData!['lastName'] ?? '';
-        email = userData!['email'] ?? '';
-        imageUrl = userData!['imageUrl'] ?? '';
-        gender = userData!['gender'] ?? '';
-        dob = userData!['dob'] ?? '';
-      }
-    });
+    if (mounted) {
+      setState(() {
+        userData = data;
+        if (userData != null) {
+          firstName = userData!['firstName'] ?? '';
+          lastName = userData!['lastName'] ?? '';
+          email = userData!['email'] ?? '';
+          imageUrl = userData!['imageUrl'] ?? '';
+          gender = userData!['gender'] ?? '';
+          dob = userData!['dob'] ?? '';
+          isAdmin = data?['isAdmin'] ?? '';
+        }
+      });
+    }
   }
 
   Future<void> signOut() async {
@@ -368,6 +373,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (isAdmin == 'true') {
+      return AdminScreen();
+    }
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,

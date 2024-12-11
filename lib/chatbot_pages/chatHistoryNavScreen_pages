@@ -1,0 +1,255 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_fyp/chatbot_pages/chat_history.dart';
+
+class ConversationDrawer extends StatefulWidget {
+  final Map<String, String> conversationMap; // Map of conversationId to titles
+  final String? currentConversationId;
+  final Function(String) onSelectConversation;
+  final Future<void> Function() onStartNewConversation;
+  final Future<void> Function({bool refresh}) fetchConversations;
+
+  const ConversationDrawer({
+    Key? key,
+    required this.conversationMap,
+    required this.currentConversationId,
+    required this.onSelectConversation,
+    required this.onStartNewConversation,
+    required this.fetchConversations, 
+  }) : super(key: key);
+
+  @override
+  _ConversationDrawerState createState() => _ConversationDrawerState();
+}
+
+class _ConversationDrawerState extends State<ConversationDrawer> {
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+  final ChatHistory _chatHistory = ChatHistory();
+
+
+
+// Function to show dialog for renaming a conversation
+Future<void> showRenameDialog(BuildContext context, String conversationId, String currentTitle) async {
+  TextEditingController _newTitleController = TextEditingController(text: currentTitle);
+
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Rename Conversation'),
+      content: TextField(
+        controller: _newTitleController,
+        decoration: const InputDecoration(
+          labelText: 'New title',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            // Save the new title
+            String newTitle = _newTitleController.text;
+            if (newTitle.isNotEmpty) {
+              _chatHistory.saveChatTitle(conversationId, newTitle);  // Call the save function
+              widget.fetchConversations(refresh: true);
+            }
+            Navigator.pop(context);
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> showDeleteConfirmationDialog(
+    BuildContext context, String conversationId, String title) async {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Delete Conversation'),
+      content: Text(
+        'Are you sure you want to delete the conversation "$title"? This action cannot be undone.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context); // Close the dialog
+          },
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(context); // Close the dialog
+            // Call the delete function
+            await _chatHistory.deleteConversation(conversationId);
+            widget.fetchConversations(refresh: true); 
+          },
+          child: const Text(
+            'Delete',
+            style: TextStyle(color: Colors.red), // Highlight delete action
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+
+  @override
+  Widget build(BuildContext context) {
+    // Filter the conversation list based on the search query
+    final filteredConversations = widget.conversationMap.entries
+        .where((entry) => entry.value.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.7, // Adjust drawer width
+      child: Drawer(
+        child: Column(
+          children: [
+            // DrawerHeader with Search Bar inside
+            Container(
+              height: MediaQuery.of(context).size.height * 0.2, // 20% of screen height
+              color: Colors.blue, // Background color
+              padding: const EdgeInsets.all(16.0), // Add padding inside the header
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 25), // Add top padding
+                    child: Text(
+                      'Chats',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24, // Adjust font size for header title
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10), // Space between title and search bar
+                  TextField(
+                    controller: _searchController,
+                    cursorColor: Colors.white,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Search conversations...',
+                      hintStyle: const TextStyle(color: Colors.white70),
+                      prefixIcon: const Icon(Icons.search, color: Colors.white),
+                      filled: true,
+                      fillColor: Colors.blue[700],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            // List of conversations
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.zero, // Remove default padding
+                itemCount: filteredConversations.length,
+                itemBuilder: (context, index) {
+                  final conversationId = filteredConversations[index].key;
+                  final title = filteredConversations[index].value ?? "Conversation ${index + 1}";
+
+                  // Create a GlobalKey for each ListTile
+                  final GlobalKey _tileKey = GlobalKey();
+
+                  return GestureDetector(
+                    onLongPress: () async {
+                      final renderBox = _tileKey.currentContext?.findRenderObject() as RenderBox?;
+                      if (renderBox != null) {
+                        final position = renderBox.localToGlobal(Offset.zero); // Get the global position of the press
+                        final size = renderBox.size;
+
+                        // Show the menu where the user taps (right under the cursor)
+                        final result = await showMenu<String>(
+                          context: context,
+                          position: RelativeRect.fromLTRB(
+                            position.dx, // Slight offset to the right to avoid clipping
+                            position.dy + size.height, // Y position just below the tap
+                            0, // No right padding
+                            0, // No bottom padding
+                          ),
+                          items: [
+                                PopupMenuItem(
+      value: 'rename',
+      child: Row(
+        children: [
+          Icon(Icons.edit, color: Colors.grey), // Add your icon
+          SizedBox(width: 8),                  // Add some spacing
+          Text('Rename'),                      // Add the text
+        ],
+      ),
+    ),
+    PopupMenuItem(
+      value: 'delete',
+      child: Row(
+        children: [
+          Icon(Icons.delete, color: Colors.red), // Add your icon
+          SizedBox(width: 8),                    // Add some spacing
+          Text('Delete'),                        // Add the text
+        ],
+      ),
+    ),
+                          ],
+                        );
+
+                        if (result == 'rename') {
+                           showRenameDialog(context, conversationId, title);
+                        } else if (result == 'delete') {
+                          showDeleteConfirmationDialog(context, conversationId, title);
+                        }
+                      }
+                    },
+                    child: ListTile(
+                      key: _tileKey, // Assign the GlobalKey to the ListTile
+                      title: Text(
+                        title,
+                        overflow: TextOverflow.ellipsis, // Add ellipsis for long text
+                        maxLines: 1, // Ensure text stays on a single line
+                        softWrap: false, // Disable wrapping to avoid newlines
+                      ),
+                      onTap: widget.currentConversationId == conversationId
+                          ? null // Disable the current conversation
+                          : () {
+                              Navigator.pop(context); // Close the drawer
+                              widget.onSelectConversation(conversationId);
+                            },
+                      tileColor: widget.currentConversationId == conversationId
+                          ? Colors.grey[300] // Highlight the active conversation
+                          : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('Start New Conversation'),
+              onTap: () async {
+                await widget.onStartNewConversation();
+                Navigator.pop(context); // Close the drawer
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

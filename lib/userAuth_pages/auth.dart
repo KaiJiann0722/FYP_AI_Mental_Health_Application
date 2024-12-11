@@ -41,6 +41,7 @@ class Auth {
         String imageUrl = data['imageUrl'] ?? '';
         String gender = data['gender'] ?? '';
         String dob = data['dob'] ?? '';
+        String isAdmin = data['isAdmin'] ?? '';
 
         return {
           'firstName': firstName,
@@ -49,6 +50,7 @@ class Auth {
           'imageUrl': imageUrl,
           'gender': gender,
           'dob': dob,
+          'isAdmin': isAdmin,
         };
       } else {
         print('User data not found for UID: $uid');

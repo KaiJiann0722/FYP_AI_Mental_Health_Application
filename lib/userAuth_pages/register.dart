@@ -34,6 +34,9 @@ class _RegisterPageState extends State<RegisterPage> {
   String? _fnameError;
   String? _lnameError;
   String? _confirmPwError;
+  String? passwordError;
+  String pwLvlMsg = "";
+  int pwLvl = 0;
 
   Future<void> registerUser() async {
     String? errorMessage = await Auth().createUserWithEmailAndPassword(
@@ -43,9 +46,11 @@ class _RegisterPageState extends State<RegisterPage> {
       lastName: _lnameController.text,
     );
 
-    setState(() {
-      errorMsg = errorMessage; // Display error message if there's an error
-    });
+    if (mounted) {
+      setState(() {
+        errorMsg = errorMessage; // Display error message if there's an error
+      });
+    }
 
     if (errorMessage == null) {
       // Registration successful
@@ -67,10 +72,12 @@ class _RegisterPageState extends State<RegisterPage> {
     );
 
     // Update the error message in the state if there's an error
-    setState(() {
-      errorMsg = customErrorMessage ??
-          ''; // Display error if exists, else empty string
-    });
+    if (mounted) {
+      setState(() {
+        errorMsg = customErrorMessage ??
+            ''; // Display error if exists, else empty string
+      });
+    }
   }
 
   Widget _title() {
@@ -174,46 +181,165 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  void _validatePassword(String password) {
+    final passwordRegex = RegExp(
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9\W])(?=.{8,20}$)(?!.*[ \t])[\x21-\x7E]+$',
+    );
+
+    if (password.isEmpty) {
+      passwordError = "Password cannot be empty.";
+    } else if (!passwordRegex.hasMatch(password)) {
+      if (password.length < 8) {
+        passwordError = "Password must be at least 8 characters long.";
+      } else if (password.length > 20) {
+        passwordError = "Password must not be longer than 20 characters.";
+      } else if (!RegExp(r'[A-Z]').hasMatch(password)) {
+        passwordError = "Password must have at least one uppercase letter.";
+      } else if (!RegExp(r'[a-z]').hasMatch(password)) {
+        passwordError = "Password must have at least one lowercase letter.";
+      } else if (!RegExp(r'[0-9\W]').hasMatch(password)) {
+        passwordError = "Password must have at least one number or symbol.";
+      } else if (password.contains(' ')) {
+        passwordError = "Password must not contain spaces.";
+      } else {
+        passwordError = "Password contains invalid characters.";
+      }
+    } else {
+      passwordError = null;
+    }
+
+    int lvl = 0;
+    if (password.length >= 8 && password.length <= 20) {
+      lvl++;
+    }
+    if (RegExp(r'[A-Z]').hasMatch(password)) {
+      lvl++;
+    }
+    if (RegExp(r'[a-z]').hasMatch(password)) {
+      lvl++;
+    }
+    if (RegExp(r'[0-9\W]').hasMatch(password)) {
+      lvl++;
+    }
+
+    if (lvl == 1) {
+      pwLvlMsg = "Password is Very Weak";
+    } else if (lvl == 2) {
+      pwLvlMsg = "Password is Weak";
+    } else if (lvl == 3) {
+      pwLvlMsg = "Password is Fair";
+    } else if (lvl == 4) {
+      pwLvlMsg = "Password is Strong";
+    } else {
+      pwLvlMsg = "";
+    }
+
+    if (mounted) {
+      setState(() {
+        errorMsg = passwordError;
+        pwLvl = lvl;
+      });
+    }
+  }
+
+  Widget _buildStrengthBar() {
+    const strengthColors = [
+      Colors.red,
+      Colors.orange,
+      Colors.yellow,
+      Colors.lightGreen,
+      Colors.green,
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Row(
+          children: List.generate(
+            4,
+            (index) => Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                height: 4,
+                decoration: BoxDecoration(
+                  color:
+                      index < pwLvl ? strengthColors[index] : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Text(
+          pwLvlMsg,
+          style: TextStyle(
+            color: pwLvl != 4 ? Colors.red : Colors.green,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        if (passwordError != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            passwordError!,
+            style: const TextStyle(
+              color: Colors.red,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _passwordEntryField(
     String title,
     TextEditingController controller,
     FocusNode focusNode,
   ) {
-    return Container(
-      padding: const EdgeInsets.only(right: 15, left: 15),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: _passwordBorderColor,
-        border: Border.all(
-          color: Colors.transparent,
-          width: 1.5,
-        ),
-      ),
-      child: TextField(
-        focusNode: _passwordFocusNode,
-        controller: _passwordController,
-        obscureText: isObscured,
-        style: const TextStyle(
-          fontSize: 16,
-          color: Colors.black,
-          fontWeight: FontWeight.w400,
-        ),
-        decoration: InputDecoration(
-          labelText: 'Password',
-          border: InputBorder.none,
-          suffixIcon: IconButton(
-            icon: Icon(
-              isObscured ? Icons.visibility : Icons.visibility_off,
-              color: Colors.grey[800],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: _passwordBorderColor,
+            border: Border.all(
+              color: passwordError == null ? Colors.transparent : Colors.red,
+              width: 1.5,
             ),
-            onPressed: () {
-              setState(() {
-                isObscured = !isObscured; // Toggle password visibility
-              });
-            },
+          ),
+          child: TextField(
+            focusNode: _passwordFocusNode,
+            controller: _passwordController,
+            obscureText: isObscured,
+            onChanged: _validatePassword,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.black,
+              fontWeight: FontWeight.w400,
+            ),
+            decoration: InputDecoration(
+              labelText: 'Password',
+              border: InputBorder.none,
+              suffixIcon: IconButton(
+                icon: Icon(
+                  isObscured ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.grey[800],
+                ),
+                onPressed: () {
+                  setState(() {
+                    isObscured = !isObscured; // Toggle password visibility
+                  });
+                },
+              ),
+            ),
           ),
         ),
-      ),
+        _buildStrengthBar(),
+      ],
     );
   }
 
@@ -259,7 +385,11 @@ class _RegisterPageState extends State<RegisterPage> {
               ? () async {
                   // Reset the error message before validation
                   setState(() {
-                    errorMsg = null;
+                    if (pwLvl != 4) {
+                      errorMsg = "Password is not strong enough";
+                    } else {
+                      errorMsg = null;
+                    }
                   });
 
                   // Run validation and set errorMsg if needed

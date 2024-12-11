@@ -1,3 +1,5 @@
 {
-  "cSpell.ignoreWords": ["Humm", "Kbhpbj"]
+  "cSpell.ignoreWords": ["Humm", "Kbhpbj"],
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true
 }
