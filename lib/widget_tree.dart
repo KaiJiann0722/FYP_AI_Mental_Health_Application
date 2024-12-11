@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fyp/admin_pages/adminScreen.dart';
 import 'package:flutter_fyp/userAuth_pages/login.dart';
 import 'package:flutter_fyp/userAuth_pages/auth.dart';
 import 'package:flutter_fyp/layout_pages/nav_menu.dart';
@@ -18,6 +19,7 @@ class _WidgetTreeState extends State<WidgetTree> {
   String imageUrl = '';
   String gender = '';
   String dob = '';
+  String isAdmin = '';
   bool isLoading = true; // To track loading state
 
   Future<void> _loadUserData() async {
@@ -31,8 +33,10 @@ class _WidgetTreeState extends State<WidgetTree> {
         imageUrl = data['imageUrl'] ?? '';
         gender = data['gender'] ?? '';
         dob = data['dob'] ?? '';
+        isAdmin = data['isAdmin'] ?? '';
         isLoading = false; // Set loading to false after data is fetched
       });
+      print("Is the user an admin? $isAdmin");
     } else {
       setState(() {
         isLoading = false; // Handle case where data is not available
@@ -81,6 +85,10 @@ class _WidgetTreeState extends State<WidgetTree> {
           // Check if gender or dob is missing
           if (gender.isEmpty || dob.isEmpty) {
             return UserSetupPage(); // Navigate to user setup if either gender or dob is missing
+          }
+
+          if (isAdmin == 'true') {
+            return AdminScreen();
           }
 
           // Proceed to the main navigation if data is valid
