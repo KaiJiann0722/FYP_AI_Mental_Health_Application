@@ -8,6 +8,8 @@ import '../models/emotion.dart';
 import '../models/journal_model.dart' as journal;
 import 'journal_details.dart';
 import 'search_journal.dart';
+import 'journal_summarize.dart';
+import 'journal_notification.dart';
 
 class JournalMainPage extends StatefulWidget {
   const JournalMainPage({super.key});
@@ -39,6 +41,64 @@ class _JournalMainPageState extends State<JournalMainPage> {
     });
 
     return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'My Journals',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.brown[900], // Use white color for AppBar text
+              ),
+            ),
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.notifications,
+                      color: Colors
+                          .brown[900]), // Use white color for AppBar icons
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => JournalNotificationPage(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: Icon(Icons.summarize,
+                      color: Colors
+                          .brown[900]), // Use white color for AppBar icons
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => JournalSummarizer(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: Icon(Icons.search,
+                      color: Colors
+                          .brown[900]), // Use white color for AppBar icons
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SearchPage()),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
       backgroundColor: Colors.grey[100],
       body: SafeArea(
         child: Padding(
@@ -46,36 +106,6 @@ class _JournalMainPageState extends State<JournalMainPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with Calendar Icon and Search Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'My Journals',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.brown[900],
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: Icon(Icons.search, color: Colors.brown[900]),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SearchPage()),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
               // Date Selector
               Container(
                 height: 60,

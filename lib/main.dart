@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fyp/widget_tree.dart';
 import 'package:firebase_core/firebase_core.dart';
+import '../services/navigationservice.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,6 +12,7 @@ Future<void> main() async {
           messagingSenderId: '9969613141',
           projectId: 'fyp-db-4e0f7',
           storageBucket: 'fyp-db-4e0f7.firebasestorage.app'));
+
   runApp(const MyApp());
 }
 
@@ -25,6 +27,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      navigatorKey: NavigationService.navigatorKey,
       home: const WidgetTree(),
     );
   }

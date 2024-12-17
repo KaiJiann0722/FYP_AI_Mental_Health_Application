@@ -13,13 +13,13 @@ class EmotionService {
   }
 
   String getSentimentLabel(double compound) {
-    if (compound >= 0.8) {
+    if (compound >= 0.7) {
       return 'Super Positive';
     } else if (compound >= 0.2) {
       return 'Positive';
     } else if (compound > -0.2) {
       return 'Neutral';
-    } else if (compound >= -0.8) {
+    } else if (compound >= -0.7) {
       return 'Negative';
     } else {
       return 'Super Negative';
