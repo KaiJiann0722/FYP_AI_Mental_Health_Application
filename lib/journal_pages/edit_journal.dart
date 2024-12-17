@@ -28,8 +28,9 @@ class _EditJournalPageState extends State<EditJournalPage> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
 
+  final String apiKey = "AIzaSyDjZcFk2PqsoBrD7m_3FrFv_ElrstXwpVY";
   final EmotionService _emotionService = EmotionService();
-  final OCRService _ocrService = OCRService();
+  late final OCRService _ocrService;
   final DatabaseService _databaseService = DatabaseService();
 
   SpeechToText _speechToText = SpeechToText();
@@ -41,6 +42,8 @@ class _EditJournalPageState extends State<EditJournalPage> {
   @override
   void initState() {
     super.initState();
+    _ocrService =
+        OCRService(apiKey: apiKey); // Initialize OCRService with apiKey
     _loadJournal();
     _initSpeech();
   }

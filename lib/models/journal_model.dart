@@ -184,11 +184,13 @@ class DatabaseService {
       String userId) async {
     DateTime now = DateTime.now();
     DateTime yearAgo = now.subtract(Duration(days: 365));
+    DateTime weekAgo = now.subtract(Duration(days: 7));
+    DateTime monthAgo = now.subtract(Duration(days: 30));
 
     QuerySnapshot<Journal> querySnapshot = await _journalRef
         .where('userId', isEqualTo: userId)
-        .where('entryDate', isGreaterThanOrEqualTo: Timestamp.fromDate(yearAgo))
         .orderBy('entryDate')
+        .limit(500) // Limit to 500 most recent entries
         .get();
 
     List<Emotion> allEmotions = [];
@@ -199,9 +201,6 @@ class DatabaseService {
     Map<String, int> weekCounts = {};
     Map<String, int> monthCounts = {};
     Map<String, int> yearCounts = {};
-
-    DateTime weekAgo = now.subtract(Duration(days: 7));
-    DateTime monthAgo = now.subtract(Duration(days: 30));
 
     for (var doc in querySnapshot.docs) {
       Map<String, dynamic>? data = doc.data().toJson();
@@ -222,7 +221,9 @@ class DatabaseService {
 
       // Count emotions for different time periods
       for (var emotion in emotions) {
-        yearCounts[emotion.emotion] = (yearCounts[emotion.emotion] ?? 0) + 1;
+        if (date.isAfter(yearAgo)) {
+          yearCounts[emotion.emotion] = (yearCounts[emotion.emotion] ?? 0) + 1;
+        }
 
         if (date.isAfter(monthAgo)) {
           monthCounts[emotion.emotion] =

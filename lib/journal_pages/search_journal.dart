@@ -83,8 +83,10 @@ class _SearchPageState extends State<SearchPage> {
     return DatabaseService().getJournalsByUserId(userId).map((journalDocs) {
       return journalDocs.where((doc) {
         final journal = doc.data();
-        final matchesQuery = journal.title.contains(_searchQuery) ||
-            journal.content.contains(_searchQuery);
+        final matchesQuery = journal.title
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase()) ||
+            journal.content.toLowerCase().contains(_searchQuery.toLowerCase());
         final matchesFilter = _filterOption == 'All' ||
             (_filterOption == 'Super Positive' &&
                 journal.sentiment?.label == 'Super Positive') ||
