@@ -203,9 +203,10 @@ class _LoginPageState extends State<LoginPage> {
             cursor: SystemMouseCursors.click, // Changes cursor to click
             child: GestureDetector(
               onTap: () {
-                Route route =
-                    MaterialPageRoute(builder: (context) => RegisterPage());
-                Navigator.pushReplacement(context, route);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => RegisterPage()),
+                );
               },
               child: const Text(
                 'Register now',

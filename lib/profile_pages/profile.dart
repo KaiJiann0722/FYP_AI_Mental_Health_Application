@@ -339,7 +339,6 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Container(
             width: 300,
             decoration: BoxDecoration(
-              color: Colors.grey[200], // Background color
               borderRadius: BorderRadius.circular(8), // Rounded corners
               border: Border.all(color: Colors.grey), // Border color
             ),
@@ -374,7 +373,14 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     if (isAdmin == 'true') {
-      return AdminScreen();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminScreen(),
+          ),
+        );
+      });
     }
     return Scaffold(
       appBar: AppBar(
