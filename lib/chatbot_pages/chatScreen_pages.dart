@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fyp/chatbot_pages/chatHistoryNavScreen_pages';
 import 'package:flutter_fyp/chatbot_pages/chat_history.dart';
+import 'package:flutter_fyp/layout_pages/nav_menu.dart';
+import 'package:flutter_fyp/widget_tree.dart';
 import 'chatbot_api.dart';
 import 'chat_typingIndicator.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final String? formattedMessage;
+  // const ChatScreen({super.key});
+  const ChatScreen({Key? key, this.formattedMessage = ''}) : super(key: key);
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -24,11 +28,23 @@ class _ChatScreenState extends State<ChatScreen> {
   Map<String, String> conversationMap = {};
   String? currentConversationId; // Track the current active conversation
   String currentConversationHistory = '';
+  bool _isRunning = false;
 
   @override
   void initState() {
     super.initState();
-    fetchConversations();
+    _initializeChat();
+  }
+
+  Future<void> _initializeChat() async {
+    await fetchConversations(); // Wait for conversations to be fetched
+    if (widget.formattedMessage != null &&
+        widget.formattedMessage!.isNotEmpty) {
+      print("Formatted Message: ${widget.formattedMessage}");
+      _startNewConversationWithFormattedMessage(widget.formattedMessage!);
+    } else {
+      print("No Formatted Message");
+    }
   }
 
   // Fetch the conversations and auto load the first one or create a new conversation
@@ -124,6 +140,56 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     });
+  }
+
+// Function to send formatted message and create a new conversation
+  Future<void> _startNewConversationWithFormattedMessage(
+      String formattedMessage) async {
+    if (_isRunning)
+      return; // Prevent running the function if it's already running
+    _isRunning = true;
+    try {
+      print('Running _startNewConversationWithFormattedMessage');
+      print('Formatted message: $formattedMessage');
+
+      // Add a check to ensure it's not called multiple times
+      if (formattedMessage.isEmpty) {
+        print('Formatted message is empty. Exiting.');
+        return; // Exit if the formatted message is empty
+      }
+
+      // Create a new conversation, only if there isn't already an active conversation
+      await _startNewConversation();
+
+      print('currentConversationId: $currentConversationId');
+
+      if (currentConversationId != null) {
+        setState(() {
+          _messages.add({'sender': 'user', 'text': formattedMessage});
+          isLoading = true;
+        });
+
+        final botResponse = await ChatBotApi.sendMessage(formattedMessage);
+
+        String response =
+            botResponse['response'] ?? 'Error: No response from chatbot';
+
+        setState(() {
+          _messages.add({'sender': 'bot', 'text': response});
+          isLoading = false;
+        });
+
+        await _chatHistory.saveChatPair(
+            currentConversationId!, formattedMessage, response);
+
+        _scrollToBottom();
+      }
+    } catch (e) {
+      print("Error starting new conversation: $e");
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   // Move the selected conversation to the top

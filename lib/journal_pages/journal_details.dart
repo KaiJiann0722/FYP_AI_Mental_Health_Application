@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fyp/admin_pages/sentimentController.dart';
+import 'package:flutter_fyp/chatbot_pages/chatScreen_pages.dart';
+import 'package:flutter_fyp/chatbot_pages/journalFormatter.dart';
+import 'package:flutter_fyp/layout_pages/nav_menu.dart';
 import '../models/journal_model.dart';
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart'; // Import fl_chart package
@@ -9,6 +13,8 @@ class JournalDetailsPage extends StatelessWidget {
   final String journalId;
 
   JournalDetailsPage({required this.journalId});
+
+  // Integrate with Chatbot
 
   @override
   Widget build(BuildContext context) {
@@ -285,6 +291,58 @@ class JournalDetailsPage extends StatelessWidget {
                         ),
                       ],
                     ),
+                  // Add the Chatbot integration button here
+                  SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16.0),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.blue, // Set the background color to blue
+                        padding: EdgeInsets.symmetric(
+                            vertical:
+                                10.0), // Increase vertical padding to make the button taller
+                      ),
+                      onPressed: () async {
+                        JournalFormatter formatter = JournalFormatter();
+
+                        print("Journal ID: '${journal.userId}'");
+                        String userName =
+                            await formatter.fetchUserName(journal.userId);
+                        print("USERNAME: '$userName'");
+
+                        String result =
+                            await formatter.getFormattedJournalContent(
+                          journalId,
+                          userName,
+                          journal.content,
+                          journal.sentiment!.label, // Use sentiment label
+                        );
+                        print(result);
+
+                        // Navigate to chatbot page with the formatted message
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(
+                              formattedMessage:
+                                  result, // Pass the formatted message
+                            ),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Start Journal Chat',
+                        style: TextStyle(
+                          color: Colors.white, // Set text color to white
+                          fontSize: 20, // Increase the font size of the text
+                          fontWeight:
+                              FontWeight.bold, // Optional: make text bold
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             );

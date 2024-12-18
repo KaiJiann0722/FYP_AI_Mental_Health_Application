@@ -4,7 +4,7 @@ import 'package:flutter_fyp/chatbot_pages/chat_history.dart';
 import 'package:http/http.dart' as http;
 
 class ChatBotApi {
-  static const String _baseUrl = 'http://192.168.0.10:5000/api';
+  static const String _baseUrl = 'http://192.168.0.3:5000/api';
 
   /// Sends a message to the chatbot and retrieves the response along with updated conversation history.
   static Future<Map<String, String>> sendMessage(String message,

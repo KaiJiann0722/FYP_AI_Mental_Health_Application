@@ -6,7 +6,11 @@ import 'package:flutter_fyp/layout_pages/nav_menu.dart';
 import 'package:flutter_fyp/userAuth_pages/userSetup.dart';
 
 class WidgetTree extends StatefulWidget {
-  const WidgetTree({super.key});
+  final String? formattedMsg; // Accept formattedMsg as a parameter
+
+  const WidgetTree(
+      {super.key,
+      this.formattedMsg}); // Modify constructor to accept the formattedMsg
 
   @override
   State<WidgetTree> createState() => _WidgetTreeState();
