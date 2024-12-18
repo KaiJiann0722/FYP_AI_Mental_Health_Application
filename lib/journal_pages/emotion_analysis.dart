@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/emotion.dart';
 import 'utils.dart';
+import 'music_recommendation.dart';
 
 class EmotionAnalysis extends StatelessWidget {
   final List<Emotion> emotions;
@@ -12,6 +13,9 @@ class EmotionAnalysis extends StatelessWidget {
   Widget build(BuildContext context) {
     int currentStep = 1; // Track the current step
     final steps = ['Journal', 'Emotion', 'Music']; // Define the steps
+
+    Emotion highestEmotion =
+        emotions.reduce((a, b) => a.probability > b.probability ? a : b);
 
     return Scaffold(
       appBar: AppBar(
@@ -141,9 +145,14 @@ class EmotionAnalysis extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     debugPrint('Get Music Recommendations button pressed');
-                    // Navigate to music recommendation page
-                    Navigator.pushReplacementNamed(
-                        context, '/music_recommendations');
+                    // Navigate to music recommendation page with the highest emotion
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MusicRecommendationsPage(
+                            highestEmotion: highestEmotion),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 16),

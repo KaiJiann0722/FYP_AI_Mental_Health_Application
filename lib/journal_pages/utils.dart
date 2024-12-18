@@ -30,6 +30,7 @@ const Map<String, String> emotionToEmoji = {
   "sadness": "😔",
   "surprise": "😮",
   "realization": "💡",
+  "neutral": "😐",
 };
 
 Color getSentimentColor(String sentimentLabel) {

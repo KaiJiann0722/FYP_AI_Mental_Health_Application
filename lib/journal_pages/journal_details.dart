@@ -103,22 +103,24 @@ class JournalDetailsPage extends StatelessWidget {
                     journal.content,
                     style: TextStyle(fontSize: 16),
                   ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Media Attachment:',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  if (journal.imageUrl != null &&
+                      journal.imageUrl!.isNotEmpty) ...[
+                    SizedBox(height: 16),
+                    Text(
+                      'Media Attachment:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 8),
-                  if (journal.imageUrl != null && journal.imageUrl!.isNotEmpty)
+                    SizedBox(height: 8),
                     Image.memory(
                       base64Decode(journal.imageUrl!),
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: 250,
                     ),
+                  ],
                   SizedBox(height: 16),
                   if (journal.emotions != null && journal.emotions!.isNotEmpty)
                     Column(
