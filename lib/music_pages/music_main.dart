@@ -23,29 +23,14 @@ class _MusicMainPageState extends State<MusicMainPage> {
   final List<String> _genres = [
     'All',
     'acoustic',
-    'afrobeat',
     'alternative',
-    'ambient',
     'anime',
-    'bluegrass',
-    'blues',
     'british',
     'cantopop',
     'classical',
     'dance',
-    'deep-house',
-    'disco',
-    'dub',
-    'dubstep',
-    'edm',
-    'electronic',
     'emo',
-    'folk',
-    'funk',
     'guitar',
-    'heavy-metal',
-    'hip-hop',
-    'house',
     'indie',
     'jazz',
     'latin',
@@ -54,21 +39,10 @@ class _MusicMainPageState extends State<MusicMainPage> {
     'metal',
     'piano',
     'pop',
-    'progressive-house',
-    'punk',
     'r-n-b',
-    'reggae',
-    'reggaeton',
     'rock',
-    'singer-songwriter',
-    'ska',
-    'sleep',
     'study',
     'soul',
-    'synth-pop',
-    'techno',
-    'trance',
-    'trip-hop',
     'world-music'
   ];
 
@@ -194,81 +168,51 @@ class _MusicMainPageState extends State<MusicMainPage> {
   Icon _buildGenreIcon(String genre) {
     switch (genre.toLowerCase()) {
       case 'all':
-        return Icon(Icons.music_note, color: Colors.grey);
-      case 'pop':
-        return Icon(Icons.music_note, color: Colors.pink);
-      case 'jazz':
-        return Icon(Icons.piano, color: Colors.brown);
-      case 'electronic':
-      case 'edm':
-      case 'techno':
-      case 'house':
-        return Icon(Icons.electric_bolt, color: Colors.teal);
-      case 'hiphop':
-      case 'rap':
-        return Icon(Icons.radio, color: Colors.deepOrange);
-      case 'country':
-        return Icon(Icons.star, color: Colors.yellow);
-      case 'blues':
-        return Icon(Icons.music_note_outlined, color: Colors.blue);
-      case 'folk':
-        return Icon(Icons.nature_people, color: Colors.green);
-      case 'metal':
-        return Icon(Icons.bolt, color: Colors.grey);
+        return Icon(Icons.library_music, color: Colors.blue);
+      case 'acoustic':
+        return Icon(Icons.music_note, color: Colors.brown);
+      case 'alternative':
+        return Icon(Icons.electric_bolt, color: Colors.purple);
+      case 'anime':
+        return Icon(Icons.animation, color: Colors.pink);
+      case 'british':
+        return Icon(Icons.flag, color: Colors.lightBlue);
+      case 'cantopop':
+        return Icon(Icons.music_note, color: Colors.orange);
+      case 'classical':
+        return Icon(Icons.piano, color: Colors.brown[700]);
+      case 'dance':
+        return Icon(Icons.nightlife, color: Colors.deepPurple);
+      case 'emo':
+        return Icon(Icons.mood, color: Colors.black);
+      case 'guitar':
+        return Icon(Icons.music_note, color: Colors.amber);
       case 'indie':
-        return Icon(Icons.album, color: Colors.indigo);
-      case 'punk':
-        return Icon(Icons.warning, color: Colors.red);
-      case 'reggae':
-        return Icon(Icons.sunny, color: Colors.green);
+        return Icon(Icons.album, color: Colors.teal);
+      case 'jazz':
+        return Icon(Icons.music_note, color: Colors.deepOrange);
+      case 'latin':
+        return Icon(Icons.festival, color: Colors.red);
+      case 'malay':
+        return Icon(Icons.music_note, color: Colors.green);
+      case 'mandopop':
+        return Icon(Icons.queue_music, color: Colors.red);
+      case 'metal':
+        return Icon(Icons.electric_bolt, color: Colors.grey[800]);
+      case 'piano':
+        return Icon(Icons.piano, color: Colors.indigo);
+      case 'pop':
+        return Icon(Icons.star, color: Colors.pink);
+      case 'r-n-b':
+        return Icon(Icons.queue_music, color: Colors.purple);
+      case 'rock':
+        return Icon(Icons.rocket, color: Colors.red);
+      case 'study':
+        return Icon(Icons.book, color: Colors.blue);
       case 'soul':
         return Icon(Icons.favorite, color: Colors.red);
-      case 'funk':
-        return Icon(Icons.star_border, color: Colors.purple);
-      case 'ambient':
-        return Icon(Icons.cloud, color: Colors.lightBlue);
-      case 'latin':
-        return Icon(Icons.place, color: Colors.red);
-      case 'brazilian':
-        return Icon(Icons.sports_soccer, color: Colors.green);
-      case 'french':
-        return Icon(Icons.location_city, color: Colors.blue);
-      case 'german':
-        return Icon(Icons.flag, color: Colors.black);
-      case 'spanish':
-        return Icon(Icons.terrain, color: Colors.red);
-      case 'indian':
-        return Icon(Icons.palette, color: Colors.orange);
-      case 'japanese':
-        return Icon(Icons.wb_sunny, color: Colors.red);
-      case 'korean':
-        return Icon(Icons.stars, color: Colors.blue);
-      case 'turkish':
-        return Icon(Icons.landscape, color: Colors.green);
-      case 'gospel':
-        return Icon(Icons.church, color: Colors.purple);
-      case 'opera':
-        return Icon(Icons.theater_comedy, color: Colors.blue);
-      case 'singersongwriter':
-        return Icon(Icons.mic, color: Colors.orange);
-      case 'dubstep':
-        return Icon(Icons.waves, color: Colors.blue);
-      case 'trance':
-        return Icon(Icons.blur_circular, color: Colors.purple);
-      case 'happy':
-        return Icon(Icons.sentiment_very_satisfied, color: Colors.yellow);
-      case 'sad':
-        return Icon(Icons.sentiment_dissatisfied, color: Colors.blue);
-      case 'chill':
-        return Icon(Icons.beach_access, color: Colors.lightBlue);
-      case 'party':
-        return Icon(Icons.celebration, color: Colors.pink);
-      case 'anime':
-        return Icon(Icons.animation, color: Colors.purple);
-      case 'videogame':
-        return Icon(Icons.gamepad, color: Colors.green);
-      case 'lofi':
-        return Icon(Icons.music_off, color: Colors.brown);
+      case 'world-music':
+        return Icon(Icons.public, color: Colors.green);
       default:
         return Icon(Icons.music_note, color: Colors.grey);
     }
@@ -358,7 +302,10 @@ class _MusicMainPageState extends State<MusicMainPage> {
               style: TextStyle(color: Colors.grey[600]),
             ),
             trailing: IconButton(
-              icon: Icon(Icons.open_in_new),
+              icon: Icon(
+                Icons.play_circle_fill,
+                color: Colors.green,
+              ),
               onPressed: () => openSpotify(song.trackId),
             ),
           ),
@@ -368,11 +315,6 @@ class _MusicMainPageState extends State<MusicMainPage> {
   }
 
   void _clearResources() {
-    // Clear any lists or dispose of any controllers here
-    allSongs.clear();
-    lastDocument = null;
-    isLoading = false;
-    hasMore = true;
     _searchQuery = '';
     _selectedEmotion = 'All';
     _selectedGenre = 'All';
@@ -382,7 +324,8 @@ class _MusicMainPageState extends State<MusicMainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mood Music'),
+        title: Text('Emotion Music',
+            style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: Icon(Icons.playlist_play),

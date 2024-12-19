@@ -12,6 +12,7 @@ import '../services/ocr_service.dart';
 import 'emotion_analysis.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class EditJournalPage extends StatefulWidget {
   final String journalId;
@@ -39,6 +40,9 @@ class _EditJournalPageState extends State<EditJournalPage> {
   XFile? _image;
   String? _existingImageUrl;
 
+  bool _isListening = false;
+  String _microphoneStatus = 'Tap to start recording';
+
   @override
   void initState() {
     super.initState();
@@ -63,25 +67,94 @@ class _EditJournalPageState extends State<EditJournalPage> {
     }
   }
 
-  void _initSpeech() async {
-    _speechEnabled = await _speechToText.initialize();
-    setState(() {});
+  Future<void> _initSpeech() async {
+    try {
+      // Request microphone permission
+      var status = await Permission.microphone.request();
+      if (status != PermissionStatus.granted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Microphone permission denied')),
+        );
+        return;
+      }
+
+      _speechEnabled = await _speechToText.initialize(
+        onError: (error) {
+          setState(() {
+            _isListening = false;
+            _microphoneStatus = 'Speech recognition error';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Speech recognition error: ${error.errorMsg}')),
+          );
+        },
+        onStatus: (status) {
+          print('Speech recognition status: $status');
+        },
+      );
+      setState(() {});
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to initialize speech: $e')),
+      );
+    }
   }
 
   void _startListening() async {
-    await _speechToText.listen(onResult: _onSpeechResult);
-    setState(() {});
+    if (!_speechEnabled) {
+      await _initSpeech();
+      if (!_speechEnabled) return;
+    }
+
+    try {
+      await _speechToText.listen(
+        onResult: _onSpeechResult,
+        listenFor: Duration(minutes: 2), // Increased listening time
+        pauseFor: Duration(seconds: 10), // Increased pause duration
+        localeId: 'en_GB',
+        partialResults: true, // Display partial results
+      );
+      setState(() {
+        _isListening = true;
+        _microphoneStatus = 'Listening...';
+        _lastWords = ''; // Reset last words
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error starting speech recognition: $e')),
+      );
+    }
   }
 
   void _stopListening() async {
-    await _speechToText.stop();
-    setState(() {});
+    try {
+      await _speechToText.stop();
+      setState(() {
+        _isListening = false;
+        _microphoneStatus = 'Tap to start recording';
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error stopping speech recognition: $e')),
+      );
+    }
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
     setState(() {
-      _lastWords = result.recognizedWords;
-      _contentController.text += ' ' + _lastWords;
+      // Only update if we have a non-empty result
+      if (result.recognizedWords.isNotEmpty) {
+        // Append with a space if the current text is not empty
+        _lastWords = result.recognizedWords;
+        _contentController.text +=
+            (_contentController.text.isNotEmpty ? ' ' : '') + _lastWords;
+
+        // If the result is final, stop listening
+        if (result.finalResult) {
+          _stopListening();
+        }
+      }
     });
   }
 
@@ -414,13 +487,13 @@ class _EditJournalPageState extends State<EditJournalPage> {
                     children: [
                       IconButton(
                         icon: Icon(
-                            _speechToText.isListening
-                                ? Icons.mic
-                                : Icons.mic_none,
-                            color: Colors.grey),
-                        onPressed: _speechToText.isNotListening
-                            ? _startListening
-                            : _stopListening,
+                          _isListening ? Icons.mic : Icons.mic_none_rounded,
+                          color: _isListening ? Colors.red : Colors.grey,
+                        ),
+                        onPressed:
+                            _isListening ? _stopListening : _startListening,
+                        tooltip:
+                            _microphoneStatus, // Add a tooltip for additional context
                       ),
                       IconButton(
                         icon: Icon(Icons.file_upload_outlined,

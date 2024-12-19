@@ -242,6 +242,7 @@ ${entry['content']}''';
         title: Text('Journal Insights',
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
       ),
+      backgroundColor: Colors.grey[100],
       body: Stack(
         children: [
           // Main content
