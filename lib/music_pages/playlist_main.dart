@@ -14,7 +14,7 @@ class PlaylistMainPage extends StatefulWidget {
 }
 
 class _PlaylistMainPageState extends State<PlaylistMainPage> {
-  bool _isGridView = true;
+  bool _isGridView = false;
 
   final TextEditingController _playlistNameController = TextEditingController();
   final TextEditingController _playlistDescController = TextEditingController();
@@ -438,10 +438,17 @@ class _PlaylistMainPageState extends State<PlaylistMainPage> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.black, // font color
+              ),
               child: Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: _createNewPlaylist,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.lightBlue, // background color
+                foregroundColor: Colors.white, // font color
+              ),
               child: Text('Create'),
             ),
           ],

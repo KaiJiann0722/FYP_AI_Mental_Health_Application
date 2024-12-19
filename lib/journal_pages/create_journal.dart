@@ -15,6 +15,7 @@ import 'emotion_analysis.dart';
 import '../services/ocr_service.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'chatbot_summarize.dart';
 
 class CreateJournal extends StatefulWidget {
   @override
@@ -421,8 +422,43 @@ class _CreateJournalState extends State<CreateJournal> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Journal'),
-        backgroundColor: Colors.grey[100],
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Create Journals',
+              style: TextStyle(
+                  fontSize: 23,
+                  fontWeight:
+                      FontWeight.bold), // Use white color for AppBar title
+            ),
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.import_contacts,
+                  ), // Use white color for AppBar icons
+                  onPressed: () async {
+                    // Use async to await the result
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatSummaryPage(),
+                      ),
+                    );
+
+                    // Check if a result was returned
+                    if (result != null) {
+                      // Update the title and entry controllers
+                      _titleController.text = result['title'];
+                      _entryController.text = result['content'];
+                    }
+                  },
+                )
+              ],
+            ),
+          ],
+        ),
       ),
       backgroundColor: Colors.grey[100],
       body: SingleChildScrollView(

@@ -42,17 +42,63 @@ class _MusicRecommendationsPageState extends State<MusicRecommendationsPage> {
   }
 
   void _saveToPlaylist(List<Songs> songs) async {
-    Playlist playlist = Playlist(
-      id: FirebaseFirestore.instance.collection('playlists').doc().id,
-      name: 'My Playlist',
-      description:
-          'A collection of songs based on ${widget.highestEmotion.emotion}',
-      songs: songs,
-      userId: FirebaseAuth
-          .instance.currentUser!.uid, // Replace with the actual user ID
-      createdAt: DateTime.now(),
-    );
-    await playlist.addPlaylistToFirestore(playlist);
+    try {
+      Playlist playlist = Playlist(
+        id: FirebaseFirestore.instance.collection('playlists').doc().id,
+        name: 'My Playlist',
+        description:
+            'A collection of songs based on ${widget.highestEmotion.emotion}',
+        songs: songs,
+        userId: FirebaseAuth.instance.currentUser!.uid,
+        createdAt: DateTime.now(),
+      );
+
+      await playlist.addPlaylistToFirestore(playlist);
+
+      // Show success SnackBar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Playlist saved successfully!'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Show error SnackBar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Failed to save playlist: ${e.toString()}'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -103,14 +149,28 @@ class _MusicRecommendationsPageState extends State<MusicRecommendationsPage> {
                     children: [
                       _buildMoodSection('Recommended Songs', snapshot.data!),
                       SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: _regenerateSongs,
-                        child: Text('Regenerate Songs'),
-                      ),
-                      SizedBox(height: 10),
-                      ElevatedButton(
-                        onPressed: () => _saveToPlaylist(snapshot.data!),
-                        child: Text('Save to Playlist'),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton(
+                            onPressed: _regenerateSongs,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Colors.lightBlue, // background color
+                              foregroundColor: Colors.white, // font color
+                            ),
+                            child: Text('Regenerate Songs'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => _saveToPlaylist(snapshot.data!),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Colors.lightBlue, // background color
+                              foregroundColor: Colors.white, // font color
+                            ),
+                            child: Text('Save to Playlist'),
+                          ),
+                        ],
                       ),
                     ],
                   );
