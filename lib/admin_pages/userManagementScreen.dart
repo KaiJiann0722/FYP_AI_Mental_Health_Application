@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_fyp/admin_pages/adminScreen.dart';
 import 'package:flutter_fyp/chatbot_pages/chatbot_api.dart';
 import 'package:flutter_fyp/userAuth_pages/auth.dart';
 
@@ -107,6 +108,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
                   // Call the deleteUser method from ApiService to delete from backend
                   await ChatBotApi.deleteUser(userId);
+
+                  await _fetchUsers();
 
                   setState(() {
                     _filteredUsers.removeWhere((user) => user['id'] == userId);

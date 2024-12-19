@@ -4,6 +4,7 @@ import 'package:flutter_fyp/profile_pages/profile.dart';
 import 'package:flutter_fyp/journal_pages/journal_main.dart';
 import 'package:get/get.dart';
 import 'package:flutter_fyp/emotion_page/emotion.dart'; // Import the new chart page
+import 'package:flutter_fyp/music_pages/music_main.dart';
 
 class NavMenu extends StatelessWidget {
   const NavMenu({super.key});
@@ -45,7 +46,7 @@ class NavController extends GetxController {
   final screens = [
     JournalMainPage(),
     EmotionChartPage(),
-    Container(color: Colors.purple),
+    MusicMainPage(),
     ChatScreen(),
     ProfilePage(),
   ];
