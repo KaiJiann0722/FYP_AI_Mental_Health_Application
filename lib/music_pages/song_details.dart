@@ -186,28 +186,6 @@ class SongDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSpotifyButton() {
-    return Center(
-      child: ElevatedButton.icon(
-        onPressed: () => openSpotify(song.trackId),
-        icon: Icon(Icons.play_arrow_rounded),
-        label: Text('Play on Spotify'),
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.green,
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          textStyle: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
   void openSpotify(String trackId) async {
     final Uri webUrl = Uri.parse('https://open.spotify.com/track/$trackId');
     await _launchUrl(webUrl);

@@ -14,6 +14,7 @@ class EmotionChartPage extends StatefulWidget {
 
 class _EmotionChartPageState extends State<EmotionChartPage> {
   late Future<Map<String, dynamic>> _emotionData;
+  int touchIndex = -1;
 
   @override
   void initState() {
@@ -55,7 +56,8 @@ class _EmotionChartPageState extends State<EmotionChartPage> {
           length: 2,
           child: Scaffold(
             appBar: AppBar(
-              title: Text('Emotion Insights'),
+              title: Text('Emotion Insights',
+                  style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold)),
               bottom: TabBar(
                 tabs: [
                   Tab(text: 'Chart', icon: Icon(Icons.show_chart)),
@@ -487,6 +489,8 @@ class EmotionChart extends StatelessWidget {
 
   Widget _buildSentimentCount() {
     Map<SentimentLevel, int> sentimentCounts = _calculateSentimentCounts();
+    int totalSentiments =
+        sentimentCounts.values.fold(0, (sum, count) => sum + count);
 
     return Card(
       elevation: 6,
@@ -506,6 +510,31 @@ class EmotionChart extends StatelessWidget {
               ),
             ),
             SizedBox(height: 8),
+            SizedBox(
+              height: 200,
+              child: PieChart(
+                PieChartData(
+                  sections: sentimentCounts.entries.map((entry) {
+                    final double percentage =
+                        (entry.value / totalSentiments) * 100;
+                    return PieChartSectionData(
+                      color: sentimentColors[entry.key],
+                      value: percentage,
+                      title: '${percentage.toStringAsFixed(1)}%',
+                      radius: 50,
+                      titleStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    );
+                  }).toList(),
+                  sectionsSpace: 2,
+                  centerSpaceRadius: 40,
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
             ...sentimentCounts.entries.map((entry) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0),

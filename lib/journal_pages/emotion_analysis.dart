@@ -117,13 +117,18 @@ class EmotionAnalysis extends StatelessWidget {
                             'Overall Sentiment:',
                             style: TextStyle(fontSize: 16),
                           ),
-                          Text(
-                            sentiment.label,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: getSentimentColor(sentiment.label),
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                sentiment.label,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: getSentimentColor(sentiment.label),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -133,6 +138,15 @@ class EmotionAnalysis extends StatelessWidget {
                         backgroundColor: Colors.grey[200],
                         valueColor: AlwaysStoppedAnimation<Color>(
                           getSentimentColor(sentiment.label),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Polarity Score: ${sentiment.compound}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: getSentimentColor(sentiment.label),
                         ),
                       ),
                     ],
@@ -159,6 +173,8 @@ class EmotionAnalysis extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    backgroundColor: Colors.lightBlue,
+                    foregroundColor: Colors.white,
                   ),
                   child: const Text(
                     'Get Music Recommendations',

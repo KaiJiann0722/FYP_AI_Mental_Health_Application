@@ -19,11 +19,11 @@ class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _filterOption = 'All';
-  DateTime? _startDate;
-  DateTime? _endDate;
   String _emotionFilter = 'All';
   final ValueNotifier<Map<String, Size>> _cardSizeNotifier =
       ValueNotifier<Map<String, Size>>({});
+
+  DateTimeRange? _dateRange;
 
   @override
   void dispose() {
@@ -50,30 +50,30 @@ class _SearchPageState extends State<SearchPage> {
     });
   }
 
-  void _selectStartDate(BuildContext context) async {
-    DateTime? picked = await showDatePicker(
+  Future<void> _selectDateRange(BuildContext context) async {
+    final DateTimeRange? picked = await showDateRangePicker(
       context: context,
-      initialDate: _startDate ?? DateTime.now(),
       firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
+      lastDate: DateTime.now(),
+      initialDateRange: _dateRange,
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: Colors.lightBlue,
+            colorScheme: ColorScheme.light(
+              primary: Colors.lightBlue,
+              onPrimary: Colors.white,
+            ),
+            buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
+          ),
+          child: child!,
+        );
+      },
     );
-    if (picked != null && picked != _startDate) {
-      setState(() {
-        _startDate = picked;
-      });
-    }
-  }
 
-  void _selectEndDate(BuildContext context) async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _endDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null && picked != _endDate) {
+    if (picked != null) {
       setState(() {
-        _endDate = picked;
+        _dateRange = picked;
       });
     }
   }
@@ -102,10 +102,11 @@ class _SearchPageState extends State<SearchPage> {
             (journal.emotions != null &&
                 journal.emotions!
                     .any((emotion) => emotion.emotion == _emotionFilter));
-        final matchesDateRange = (_startDate == null ||
-                journal.entryDate.toDate().isAfter(_startDate!)) &&
-            (_endDate == null ||
-                journal.entryDate.toDate().isBefore(_endDate!));
+        final matchesDateRange = _dateRange == null ||
+            (journal.entryDate.toDate().isAtSameMomentAs(_dateRange!.start) ||
+                journal.entryDate.toDate().isAtSameMomentAs(_dateRange!.end) ||
+                (journal.entryDate.toDate().isAfter(_dateRange!.start) &&
+                    journal.entryDate.toDate().isBefore(_dateRange!.end)));
         return matchesQuery &&
             matchesFilter &&
             matchesEmotion &&
@@ -367,6 +368,23 @@ class _SearchPageState extends State<SearchPage> {
     return 'Time: ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
+  Color getSentimentColor(String sentiment) {
+    switch (sentiment) {
+      case 'Super Positive':
+        return Colors.green;
+      case 'Positive':
+        return Colors.lightGreen;
+      case 'Neutral':
+        return Colors.black;
+      case 'Negative':
+        return Colors.orange;
+      case 'Super Negative':
+        return Colors.red;
+      default:
+        return Colors.blueGrey; // Default color for unexpected values
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -386,87 +404,226 @@ class _SearchPageState extends State<SearchPage> {
         ],
       ),
       backgroundColor: Colors.grey[100],
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search',
-                hintStyle: TextStyle(color: Colors.grey[600]),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.close, color: Colors.grey[600]),
+                    onPressed: () {
+                      _searchController.clear();
+                      _updateSearchQuery('');
+                    },
+                  ),
                 ),
-                filled: true,
-                fillColor: Colors.white,
-                prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.close, color: Colors.grey[600]),
-                  onPressed: () {
-                    _searchController.clear();
-                    _updateSearchQuery('');
-                  },
+                onChanged: _updateSearchQuery,
+              ),
+              const SizedBox(height: 16),
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      // Top Row with Clear Filters button
+                      Row(
+                        children: [
+                          Spacer(), // Push the button to the right
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _filterOption = 'All'; // Reset sentiment filter
+                                _emotionFilter = 'All'; // Reset emotion filter
+                                _dateRange = null; // Reset date range
+                              });
+                              _updateFilterOption('All'); // Update logic
+                              _updateEmotionFilter('All');
+                            },
+                            icon: Icon(Icons.refresh),
+                            label: Text('Reset Filters'),
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              backgroundColor: Colors.black,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      // Row for sentiment filter
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey[300]!),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: _filterOption,
+                                  isExpanded: true,
+                                  icon: Icon(Icons.sentiment_satisfied_alt,
+                                      color: Colors.blue),
+                                  items: <String>[
+                                    'All',
+                                    'Super Positive',
+                                    'Positive',
+                                    'Neutral',
+                                    'Negative',
+                                    'Super Negative'
+                                  ].map((String value) {
+                                    IconData getIcon() {
+                                      switch (value) {
+                                        case 'Super Positive':
+                                          return Icons.sentiment_very_satisfied;
+                                        case 'Positive':
+                                          return Icons.sentiment_satisfied;
+                                        case 'Neutral':
+                                          return Icons.sentiment_neutral;
+                                        case 'Negative':
+                                          return Icons.sentiment_dissatisfied;
+                                        case 'Super Negative':
+                                          return Icons
+                                              .sentiment_very_dissatisfied;
+                                        default:
+                                          return Icons.all_inclusive;
+                                      }
+                                    }
+
+                                    return DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            getIcon(),
+                                            color: getSentimentColor(value),
+                                            size: 20,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            value,
+                                            style: TextStyle(
+                                              color: getSentimentColor(value),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      _filterOption = newValue!;
+                                    });
+                                    _updateFilterOption(newValue);
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      // Row for emotion filter
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey[300]!),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: _emotionFilter,
+                                  isExpanded: true,
+                                  icon: Icon(Icons.emoji_emotions,
+                                      color: Colors.blue),
+                                  items: <String>['All', ...emotionToEmoji.keys]
+                                      .map((String value) {
+                                    return DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            value == 'All'
+                                                ? '🔍'
+                                                : emotionToEmoji[value] ?? '😊',
+                                            style: TextStyle(fontSize: 16),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(value),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      _emotionFilter = newValue!;
+                                    });
+                                    _updateEmotionFilter(newValue);
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      // Date range selection button
+                      Container(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _selectDateRange(context),
+                          icon: Icon(Icons.date_range),
+                          label: Text(
+                            _dateRange == null
+                                ? 'Select Date Range'
+                                : '${DateFormat('MMM dd, yyyy').format(_dateRange!.start)} - ${DateFormat('MMM dd, yyyy').format(_dateRange!.end)}',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              onChanged: _updateSearchQuery,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                DropdownButton<String>(
-                  value: _filterOption,
-                  items: <String>[
-                    'All',
-                    'Super Positive',
-                    'Positive',
-                    'Neutral',
-                    'Negative',
-                    'Super Negative'
-                  ].map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: _updateFilterOption,
-                ),
-                DropdownButton<String>(
-                  value: _emotionFilter,
-                  items: <String>['All', ...emotionToEmoji.keys]
-                      .map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: _updateEmotionFilter,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: () => _selectStartDate(context),
-                  child: Text(_startDate == null
-                      ? 'Start Date'
-                      : DateFormat('yyyy-MM-dd').format(_startDate!)),
-                ),
-                ElevatedButton(
-                  onPressed: () => _selectEndDate(context),
-                  child: Text(_endDate == null
-                      ? 'End Date'
-                      : DateFormat('yyyy-MM-dd').format(_endDate!)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: StreamBuilder<List<QueryDocumentSnapshot<Journal>>>(
+              const SizedBox(height: 16),
+              StreamBuilder<List<QueryDocumentSnapshot<Journal>>>(
                 stream: _searchJournals(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -484,6 +641,8 @@ class _SearchPageState extends State<SearchPage> {
                         _groupJournalsByMonthYearAndDay(journals);
 
                     return ListView(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
                       children: groupedJournals.entries.map((monthEntry) {
                         String monthYear = monthEntry.key;
                         Map<String, List<Journal>> dayJournals =
@@ -692,6 +851,21 @@ class _SearchPageState extends State<SearchPage> {
                                                                 color: Colors
                                                                     .grey[600]),
                                                           ),
+                                                          const SizedBox(
+                                                              height: 8),
+                                                          Text(
+                                                            'Sentiment: ${journal.sentiment?.label ?? 'Unknown'}',
+                                                            style: TextStyle(
+                                                              color: getSentimentColor(journal
+                                                                      .sentiment
+                                                                      ?.label ??
+                                                                  'Unknown'),
+                                                              fontSize: 14,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
                                                         ],
                                                       ),
                                                     ),
@@ -714,8 +888,8 @@ class _SearchPageState extends State<SearchPage> {
                   }
                 },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
