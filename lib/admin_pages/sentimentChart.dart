@@ -386,26 +386,29 @@ class _SentimentChartState extends State<SentimentChart> {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Center(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              if (isLoading) const CircularProgressIndicator(),
-              if (errorMessage.isNotEmpty)
-                Text(
-                  errorMessage,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
+          child: SingleChildScrollView(
+            // Wrap the content with SingleChildScrollView
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                if (isLoading) const CircularProgressIndicator(),
+                if (errorMessage.isNotEmpty)
+                  Text(
+                    errorMessage,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-              if (!isLoading && errorMessage.isEmpty) ...[
-                _buildSentimentGraph(),
-                _buildLegend(),
-                const SizedBox(height: 16),
-                displayUserSentiment(),
+                if (!isLoading && errorMessage.isEmpty) ...[
+                  _buildSentimentGraph(),
+                  _buildLegend(),
+                  const SizedBox(height: 16),
+                  displayUserSentiment(),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

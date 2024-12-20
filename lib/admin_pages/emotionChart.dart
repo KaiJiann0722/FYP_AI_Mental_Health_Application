@@ -1,3 +1,4 @@
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_fyp/admin_pages/emotionController.dart';
@@ -157,7 +158,7 @@ class _EmotionChartState extends State<EmotionChart> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: DropdownButton<String>(
+                  child: DropdownButton2<String>(
                     value: selectedRange,
                     onChanged: (String? newValue) {
                       setState(() {
@@ -165,7 +166,7 @@ class _EmotionChartState extends State<EmotionChart> {
                         filterDataByRange();
                       });
                     },
-                    items: ['Weekly', 'Monthly', 'Yearly']
+                    items: ['Weekly', 'Monthly']
                         .map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
