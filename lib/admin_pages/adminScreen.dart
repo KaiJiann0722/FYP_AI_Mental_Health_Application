@@ -92,8 +92,17 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   // Sign out method
+  // Future<void> signOut() async {
+  //   await Auth().signOut();
+  // }
   Future<void> signOut() async {
     await Auth().signOut();
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => WidgetTree()),
+        (route) => false,
+      );
+    }
   }
 
   // Sign out button
