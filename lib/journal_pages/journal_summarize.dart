@@ -120,7 +120,9 @@ ${entry['content']}''';
         .collection('journal')
         .where('userId', isEqualTo: user.uid)
         .where('entryDate', isGreaterThanOrEqualTo: _startDate)
-        .where('entryDate', isLessThanOrEqualTo: _endDate)
+        .where('entryDate',
+            isLessThanOrEqualTo:
+                _endDate?.add(Duration(days: 1))) // Ensure full end day
         .orderBy('entryDate');
 
     final querySnapshot = await query.get();

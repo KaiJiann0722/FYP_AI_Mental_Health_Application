@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/songs.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'playlistSelection.dart';
+import 'playlist_main.dart';
 
 class SongDetailsPage extends StatelessWidget {
   final Songs song;
@@ -12,9 +13,27 @@ class SongDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Song Details'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.playlist_play),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PlaylistMainPage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
+            automaticallyImplyLeading:
+                false, // This removes the default back button
             expandedHeight: 250.0,
             floating: false,
             pinned: true,
@@ -26,6 +45,7 @@ class SongDetailsPage extends StatelessWidget {
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
               ),
               background: Container(

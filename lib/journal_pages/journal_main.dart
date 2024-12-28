@@ -244,6 +244,8 @@ class _JournalMainPageState extends State<JournalMainPage> {
                           String content = doc['content'];
                           DateTime entryDate =
                               (doc['entryDate'] as Timestamp).toDate();
+                          String sentimentLabel = doc['sentiment']['label'] ??
+                              'Unknown'; // Assuming sentiment is stored as a map with a 'label' key
 
                           // Retrieve emotions and sentiment directly from the journal document
                           List<dynamic> emotionsJson = doc['emotions'];
@@ -374,6 +376,16 @@ class _JournalMainPageState extends State<JournalMainPage> {
                                                   content,
                                                   style: TextStyle(
                                                     color: Colors.grey[600],
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  'Sentiment: ${sentimentLabel}',
+                                                  style: TextStyle(
+                                                    color: getSentimentColor(
+                                                        sentimentLabel),
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
                                               ],

@@ -103,10 +103,12 @@ class _SearchPageState extends State<SearchPage> {
                 journal.emotions!
                     .any((emotion) => emotion.emotion == _emotionFilter));
         final matchesDateRange = _dateRange == null ||
-            (journal.entryDate.toDate().isAtSameMomentAs(_dateRange!.start) ||
-                journal.entryDate.toDate().isAtSameMomentAs(_dateRange!.end) ||
-                (journal.entryDate.toDate().isAfter(_dateRange!.start) &&
-                    journal.entryDate.toDate().isBefore(_dateRange!.end)));
+            (journal.entryDate.toDate().isAfter(_dateRange!.start) &&
+                journal.entryDate
+                    .toDate()
+                    .isBefore(_dateRange!.end.add(Duration(days: 1)))) ||
+            journal.entryDate.toDate().isAtSameMomentAs(_dateRange!.start) ||
+            journal.entryDate.toDate().isAtSameMomentAs(_dateRange!.end);
         return matchesQuery &&
             matchesFilter &&
             matchesEmotion &&
