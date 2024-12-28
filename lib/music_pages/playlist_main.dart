@@ -255,12 +255,7 @@ class _PlaylistMainPageState extends State<PlaylistMainPage> {
           ),
         );
 
-        // If playlist was deleted, refresh the playlist list
-        if (result == true) {
-          setState(() {
-            _fetchUserPlaylists();
-          });
-        }
+        await _fetchUserPlaylists();
       },
       child: isGrid ? _buildGridCard(playlist) : _buildListCard(playlist),
     );

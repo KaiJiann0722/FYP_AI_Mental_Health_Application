@@ -339,9 +339,7 @@ class _ChatSummaryPageState extends State<ChatSummaryPage> {
                   child: ListTile(
                     contentPadding: EdgeInsets.all(12),
                     title: Text(
-                      firstMessage.isNotEmpty
-                          ? firstMessage
-                          : 'Conversation ${index + 1}',
+                      conversation['title'] ?? 'Conversation with Bot',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                       ),
